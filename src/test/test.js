@@ -874,6 +874,7 @@ describe('xterm.js', function() {
       expect(xterm.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
+
   describe.only('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
@@ -1104,7 +1105,23 @@ describe('xterm.js', function() {
       xterm.resize(50, xterm.rows)
     })
     it.skip('increasing size, writing to buffer, decreasing size, writing to buffer and then increasing again  handles wrapping properly', function () {
+    })
+
+    it('reducing terminal width', function () {
+      console.log('xterm.cols', xterm.cols)
       // TBD
     })
-  })
+    it('increasing terminal width', function() {
+      // TBD
+    })
+    it('increasing terminal width after it was reduced', function() {
+      // TBD
+    })
+    it('reducing terminal width while scrolled up', function() {
+      // TBD
+    })
+    it('increasing terminal width while scrolled up', function() {
+      // TBD
+    })
+  });
 });
