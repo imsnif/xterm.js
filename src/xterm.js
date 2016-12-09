@@ -1776,16 +1776,16 @@ Terminal.prototype.error = function() {
 };
 
 function formLine (l, memo, index, memoIndex) {
-  if (l.every(c => c[3] && c[3] === 'wrapped') && index > 0) {
+  if (l.every(c => c[3] && c[3] === 'wrapped' || c[3] === 'pad') && index > 0) {
     var prevLineTextWithoutWhiteSpace = memo[memo.length - 1]
+    .filter(c => !c[3] || c[3] !== 'pad')
     .map(c => c[1])
     .join('')
-    .replace(/\s*$/g, '')
     var prevLine = memo[memo.length - 1]
     .slice(0, prevLineTextWithoutWhiteSpace.length)
     .concat(l)
     var nextLine = memo[memoIndex + 1]
-    if (nextLine && nextLine.every(c => c[3] && c[3] === 'wrapped')) {
+    if (nextLine && nextLine.every(c => c[3] && c[3] === 'wrapped' || c[3] === 'pad')) {
       return prevLine.concat(formLine(nextLine, memo, index, memoIndex + 1))
     } else {
       return prevLine
@@ -1793,10 +1793,6 @@ function formLine (l, memo, index, memoIndex) {
   } else {
     return null
   }
-}
-
-function removeWrappedFlag (character) {
-  return character.slice(0, 2)
 }
 
 /**
@@ -1832,7 +1828,7 @@ Terminal.prototype.resize = function(x, y) {
     // unwrap all lines
     var unwrappedLine = formLine(l, memo, index, memo.length - 1)
     if (unwrappedLine) {
-      memo[memo.length - 1] = unwrappedLine.map(removeWrappedFlag)
+      memo[memo.length - 1] = unwrappedLine
     } else {
       memo.push(l)
     }
@@ -1840,7 +1836,7 @@ Terminal.prototype.resize = function(x, y) {
   }, [])
   .map(l => {
     // pad lines with empty char as needed
-    var ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    var ch = [this.defAttr, ' ', 1, 'pad']; // does xterm use the default attr?
     while (l.length <= x) {
       l.push(ch)
     }
@@ -1848,7 +1844,7 @@ Terminal.prototype.resize = function(x, y) {
   })
   .reduce((memo, l) => {
     // wrap lines up to x
-    var ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    var ch = [this.defAttr, ' ', 1, 'pad']; // does xterm use the default attr?
     var textLine = l.map(c => c[1]).join('')
     var lengthWithoutWhiteSpace = textLine.replace(/\s*$/g, '').length
     if (lengthWithoutWhiteSpace > x) {
