@@ -1775,6 +1775,30 @@ Terminal.prototype.error = function() {
   this.context.console.error.apply(this.context.console, args);
 };
 
+function formLine (l, memo, index, memoIndex) {
+  if (l.every(c => c[3] && c[3] === 'wrapped') && index > 0) {
+    var prevLineTextWithoutWhiteSpace = memo[memo.length - 1]
+    .map(c => c[1])
+    .join('')
+    .replace(/\s*$/g, '')
+    var prevLine = memo[memo.length - 1]
+    .slice(0, prevLineTextWithoutWhiteSpace.length)
+    .concat(l)
+    var nextLine = memo[memoIndex + 1]
+    if (nextLine && nextLine.every(c => c[3] && c[3] === 'wrapped')) {
+      return prevLine.concat(formLine(nextLine, memo, index, memoIndex + 1))
+    } else {
+      return prevLine
+    }
+  } else {
+    return null
+  }
+}
+
+function removeWrappedFlag (character) {
+  return character.slice(0, 2)
+}
+
 /**
  * Resizes the terminal.
  *
@@ -1801,32 +1825,83 @@ Terminal.prototype.resize = function(x, y) {
   if (y < 1) y = 1;
 
   // resize cols
-  j = this.cols;
-  if (j < x) {
-    let rowCount = this.lineWrap.rowCount
-    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-    i = this.lines.length;
-    this.lineWrap.changeLineLength(this.lines, x)
-    let newRows = this.lineWrap.rowCount - rowCount
-    while (newRows < 0 && newRows++) {
-      this.y--
-      if (this.y < 0) {
-        this.y++
-        this.ybase--
-        if (this.ydisp - 1 >= 0) this.ydisp--
+  i = this.lines.length;
+  var origLineCount = this.lines.length
+  this.lines = this.lines
+  .reduce((memo, l, index) => {
+    // unwrap all lines
+    var unwrappedLine = formLine(l, memo, index, memo.length - 1)
+    if (unwrappedLine) {
+      memo[memo.length - 1] = unwrappedLine.map(removeWrappedFlag)
+    } else {
+      memo.push(l)
+    }
+    return memo
+  }, [])
+  .map(l => {
+    // pad lines with empty char as needed
+    var ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    while (l.length <= x) {
+      l.push(ch)
+    }
+    return l
+  })
+  .reduce((memo, l) => {
+    // wrap lines up to x
+    var ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    var textLine = l.map(c => c[1]).join('')
+    var lengthWithoutWhiteSpace = textLine.replace(/\s*$/g, '').length
+    if (lengthWithoutWhiteSpace > x) {
+      var lines = l.reduce((memo, e) => {
+        if (memo.length === 0) memo.push([])
+        if (memo[memo.length - 1].length >= x) memo.push([])
+        memo[memo.length - 1].push(e)
+        return memo
+      }, [])
+      .map(line => {
+        while (line.length <= x) {
+          line.push(ch)
+        }
+        return line
+      })
+      var firstLine = lines.shift()
+      memo.push(firstLine)
+      if (lines.length > 0) {
+        return memo
+        .concat(lines.map(l => l.map(c => c[3] === 'wrapped' ? c : c.concat('wrapped'))))
+      } else {
+        return memo
+      }
+    } else {
+      while (l.length > x) {
+        l.pop()
+      }
+      memo.push(l)
+    }
+    return memo
+  }, [])
+  // update scroll and y position if lines were added or removed
+  var currentLineCount = this.lines.length
+  if (origLineCount < currentLineCount) {
+    var extraLines = currentLineCount - origLineCount
+    if (this.y + extraLines <= this.rows) {
+      this.y += extraLines
+    } else {
+      if (this.ydisp === this.ybase) {
+        this.ybase += extraLines
+        this.ydisp += extraLines
+      } else {
+        this.ybase += extraLines
       }
     }
-  } else { // (j > x)
-    let rowCount = this.lineWrap.rowCount
-    i = this.lines.length;
-    this.lineWrap.changeLineLength(this.lines, x)
-    let newRows = this.lineWrap.rowCount - rowCount
-    while (newRows > 0 && newRows--) {
-      this.y++
-      if (this.y > this.scrollBottom) {
-        this.y--
-        this.ybase++
-        if (this.ydisp + 1 <= this.ybase) this.ydisp++
+  } else {
+    var removedLineCount = origLineCount - currentLineCount
+    if (this.ybase - removedLineCount >= 0) {
+      if (this.ydisp === this.ybase) {
+        this.ybase -= removedLineCount
+        this.ydisp -= removedLineCount
+      } else {
+        this.ybase -= removedLineCount
       }
     }
   }
