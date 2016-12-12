@@ -1802,7 +1802,6 @@ Terminal.prototype.resize = function(x, y) {
   if (y < 1) y = 1;
 
   // resize cols
-  i = this.lines.length;
   var origLineCount = this.lines.length
   this.lines = this.lines
   .map(l => unpadLine(l))
