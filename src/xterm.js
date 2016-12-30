@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
+import { LineWrap } from './utils/LineWrap.js'
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -210,6 +211,7 @@ function Terminal(options) {
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
   this.lines = new CircularList(this.scrollback);
+  this.lineWrap = new LineWrap(this.scrollback);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1019,6 +1021,7 @@ Terminal.flags = {
  * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
  * @param {boolean} queue Whether the refresh should ran right now or be queued
  */
+
 Terminal.prototype.refresh = function(start, end, queue) {
   var self = this;
 
@@ -2863,22 +2866,25 @@ Terminal.prototype.resize = function(x, y) {
 
   // resize cols
   j = this.cols;
-  if (j < x) {
-    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
-      }
-    }
-  } else { // (j > x)
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
-      }
-    }
+  if (j !== x) {
+    this.lineWrap.changeLineLength(this.lines, x)
   }
+//  if (j < x) {
+//    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+//    i = this.lines.length;
+//    while (i--) {
+//      while (this.lines.get(i).length < x) {
+//        // this.lines.get(i).push(ch);
+//      }
+//    }
+//  } else { // (j > x)
+//    i = this.lines.length;
+//    while (i--) {
+//      if (this.lines.get(i).length > x) {
+//        this.lineWrap.changeLineLength(i, this.lines.get(i).length, x)
+//      }
+//    }
+//  }
   this.setupStops(j);
   this.cols = x;
 
