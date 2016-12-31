@@ -1120,14 +1120,19 @@ Terminal.prototype.refresh = function(start, end, queue) {
     startIndexInLine = rowIndexInLine * width
     endIndexInLine = startIndexInLine + width
     out = '';
-//    console.log('row:', row)
-//    console.log('this.ydbase:', this.ybase)
-//    console.log('lineIndex:', lineContainingRowIndex.lineIndex)
 
+    console.log('this.y, y, (this.ybase - this.ydisp):', this.y, y, (this.ybase - this.ydisp))
     if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
         && !this.cursorHidden) {
-      x = this.x;
+      const before = line
+        .slice(startIndexInLine, endIndexInLine)
+        .map(c => c[1])
+        .join('')
+      const rowWithoutWhiteSpace = before
+        .replace(/\s\s+$/, ' ')
+      x = rowWithoutWhiteSpace.length
+      // x = this.x;
     } else {
       x = -1;
     }
@@ -1142,7 +1147,8 @@ Terminal.prototype.refresh = function(start, end, queue) {
       if (!ch_width)
         continue;
 
-      if (i === x - startIndexInLine) data = -1;
+      if (i - startIndexInLine === x) data = -1;
+      // if (i === x - startIndexInLine) data = -1;
 
       if (data !== attr) {
         if (attr !== this.defAttr) {
@@ -1252,7 +1258,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
 //    console.log('want to set:', y)
 //    console.log('would this be better?:', y - lineRowDifference)
-    this.children[y- lineRowDifference].innerHTML = out;
+    this.children[y - lineRowDifference].innerHTML = out;
   }
 
   if (parent) {

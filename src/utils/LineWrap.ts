@@ -49,7 +49,8 @@ export class LineWrap<T> {
       const lineWithoutTrailingSpaces = line
         .map(c => c[1])
         .join('')
-        .replace(/\s*$/, '') // TODO: don't create so many arrays
+        .replace(/\s\s+$/, ' ') // TODO: don't create so many arrays
+        // .replace(/\s*$/, '') // TODO: don't create so many arrays
       const currentLength = lineWithoutTrailingSpaces.length
       if (length < currentLength) {
         const newRowCount = Math.ceil(currentLength / length)
