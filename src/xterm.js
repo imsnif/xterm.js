@@ -1023,6 +1023,7 @@ Terminal.flags = {
  */
 
 Terminal.prototype.refresh = function(start, end, queue) {
+  console.log('****refreshing****')
   var self = this;
 
   // queue defaults to true
@@ -1062,7 +1063,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
   }
 
   var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
-
+  var lineContainingRowIndex, rowIndexInLine, startIndexInLine, endIndexInLine;
   // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
   if (end - start >= this.rows / 2) {
     parent = this.element.parentNode;
@@ -1071,6 +1072,13 @@ Terminal.prototype.refresh = function(start, end, queue) {
     }
   }
 
+  // TODO:
+  // line: line in this.lines
+  // row: row in this.lineWrap
+  // For each row we'd like to render, we need to find it from the lineWrap instance
+  // To find it, we query it, asking which line in this.lines contains it and its index within that line
+  // Then we extract (by reference) all the characters in that row
+  // We render those characters into the row index
   width = this.cols;
   y = start;
 
@@ -1082,8 +1090,14 @@ Terminal.prototype.refresh = function(start, end, queue) {
   for (; y <= end; y++) {
     row = y + this.ydisp;
 
-    line = this.lines.get(row);
+    lineContainingRowIndex = this.lineWrap.getRowIndex(row)
+    line = this.lines.get(lineContainingRowIndex.lineIndex);
+    rowIndexInLine = row - lineContainingRowIndex.startIndex
+    startIndexInLine = rowIndexInLine * width
+    endIndexInLine = startIndexInLine + width
     out = '';
+    console.log('row:', row)
+    console.log('lineIndex:', lineContainingRowIndex.lineIndex)
 
     if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
@@ -1094,16 +1108,16 @@ Terminal.prototype.refresh = function(start, end, queue) {
     }
 
     attr = this.defAttr;
-    i = 0;
+    i = startIndexInLine;
 
-    for (; i < width; i++) {
-      data = line[i][0];
-      ch = line[i][1];
-      ch_width = line[i][2];
+    for (; i <= endIndexInLine; i++) {
+      data = line[i] ? line[i][0] : attr;
+      ch = line[i] ? line[i][1] : undefined;
+      ch_width = line[i] ? line[i][2] : undefined;
       if (!ch_width)
         continue;
 
-      if (i === x) data = -1;
+      if (i === x - startIndexInLine) data = -1;
 
       if (data !== attr) {
         if (attr !== this.defAttr) {

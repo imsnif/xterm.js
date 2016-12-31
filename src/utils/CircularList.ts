@@ -47,6 +47,10 @@ export class CircularList<T> {
     return this._array.forEach;
   }
 
+  public filter(callbackfn: any): any { // TODO: fix types or find a way to export the filter method directly
+    return this._array.filter(callbackfn)
+  }
+
   /**
    * Gets the value at an index.
    *
