@@ -16,9 +16,9 @@ export class LineWrap<T> {
   private _rowIndices
   constructor(maxLength: number) {
     this._rowIndices = new CircularList<IRowIndex>(maxLength)
-    for (let i = 0; i < maxLength; i++) {
-      this._rowIndices.push(new RowIndex(i, i, i))
-    }
+//    for (let i = 0; i < maxLength; i++) {
+//      this._rowIndices.push(new RowIndex(i, i, i))
+//    }
   }
   public getRowIndex(index: number): number {
     const lineContainingRowIndex = this._rowIndices.filter(r => {
@@ -31,6 +31,16 @@ export class LineWrap<T> {
   }
   public getRow(index: number): any {
     return this._rowIndices.get(index)
+  }
+  public push(value: T): void { // TODO: fix this
+    const lineIndex = this._rowIndices.length
+      ? this._rowIndices.get(this._rowIndices.length - 1).lineIndex + 1
+      : 0
+    const startIndex = this._rowIndices.length
+      ? this._rowIndices.get(this._rowIndices.length - 1).endIndex + 1
+      : 0
+    const endIndex = startIndex
+    this._rowIndices.push(new RowIndex(lineIndex, startIndex, endIndex))
   }
   public changeLineLength (lines: any, length: number) {
     for (let i = 0; i < this._rowIndices.length; i++) {
@@ -49,14 +59,20 @@ export class LineWrap<T> {
         const startIndex = this._rowIndices.get(i).startIndex
         this._rowIndices.get(i).endIndex = startIndex
       }
-      if (this._rowIndices.get(i + 1).startIndex > 0) { // next row does not circle back
+      if (this._rowIndices.get(i + 1) && this._rowIndices.get(i + 1).startIndex > 0) { // next row does not circle back
         this._rowIndices.get(i + 1).startIndex = this._rowIndices.get(i).endIndex + 1
       }
     }
   }
-//  public get rowCount(): number {
-//    // TBD
-//  }
+  public get rowCount(): number {
+    let count = 0
+    for (let i = 0; i < this._rowIndices.length; i++) {
+      const lineStats = this._rowIndices.get(i)
+      const numRows = lineStats.endIndex - lineStats.startIndex + 1
+      count += numRows
+    }
+    return count
+  }
   public lineIndex: number // the index of this.lines
   public startIndex: number // The start index in this.lines[lineIndex]
   public endIndex: number // The end index in this.lines[lineIndex]

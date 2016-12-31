@@ -4,15 +4,20 @@
  * @module xterm/utils/CircularList
  * @license MIT
  */
+
+const EventEmitter = require('events') // TODO: removme
+
 export class CircularList<T> {
   private _array: T[];
   private _startIndex: number;
   private _length: number;
+  public emitter: any; // TODO: removeme
 
   constructor(maxLength: number) {
     this._array = new Array<T>(maxLength);
     this._startIndex = 0;
     this._length = 0;
+    this.emitter = new EventEmitter()
   }
 
   public get maxLength(): number {
@@ -20,6 +25,7 @@ export class CircularList<T> {
   }
 
   public set maxLength(newMaxLength: number) {
+    // console.log('SETTING MAXLENGTH!!!!')
     // Reconstruct array, starting at index 0. Only transfer values from the
     // indexes 0 to length.
     let newArray = new Array<T>(newMaxLength);
@@ -35,12 +41,14 @@ export class CircularList<T> {
   }
 
   public set length(newLength: number) {
+    // console.log('SETTING LENGTH!!!')
     if (newLength > this._length) {
       for (let i = this._length; i < newLength; i++) {
         this._array[i] = undefined;
       }
     }
     this._length = newLength;
+    this.emitter.emit('length', newLength)
   }
 
   public get forEach(): (callbackfn: (value: T, index: number, array: T[]) => void) => void {
@@ -72,6 +80,7 @@ export class CircularList<T> {
    * @param value The value to set.
    */
   public set(index: number, value: T): void {
+    // console.log('SETTING INDEX!!!!')
     this._array[this._getCyclicIndex(index)] = value;
   }
 
@@ -90,6 +99,7 @@ export class CircularList<T> {
     } else {
       this._length++;
     }
+    this.emitter.emit('push', value)
   }
 
   /**
@@ -97,6 +107,7 @@ export class CircularList<T> {
    * @return The popped value.
    */
   public pop(): T {
+    // console.log('POPPING!!!!!')
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 
@@ -110,6 +121,7 @@ export class CircularList<T> {
    * @param items The items to insert.
    */
   public splice(start: number, deleteCount: number, ...items: T[]): void {
+    // console.log('SPLICING!!!!')
     if (deleteCount) {
       for (let i = start; i < this._length - deleteCount; i++) {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
@@ -138,6 +150,7 @@ export class CircularList<T> {
    * @param count The number of items to remove.
    */
   public trimStart(count: number): void {
+    // console.log('trimStarting!!!!')
     if (count > this._length) {
       count = this._length;
     }
@@ -146,6 +159,7 @@ export class CircularList<T> {
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
+    // console.log('shiftelementing!!!!!')
     if (count <= 0) {
       return;
     }

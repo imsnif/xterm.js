@@ -212,6 +212,7 @@ function Terminal(options) {
    */
   this.lines = new CircularList(this.scrollback);
   this.lineWrap = new LineWrap(this.scrollback);
+  this.lines.emitter.on('push', (data) => this.lineWrap.push(data))
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1022,6 +1023,24 @@ Terminal.flags = {
  * @param {boolean} queue Whether the refresh should ran right now or be queued
  */
 
+function printRows (lines, lineWrap, start, end, width, ydisp) { // TODO: removeme
+  console.log('-----')
+  const difference = lineWrap.rowCount - lines.length
+  const startWithDiff = start + difference
+  const endWithDiff = end + difference
+  for (let i = startWithDiff; i <= endWithDiff; i ++) {
+    const row = i + ydisp
+    const lineStats = lineWrap.getRowIndex(row)
+    const line = lines.get(lineStats.lineIndex)
+    const rowIndexInLine = row - lineStats.startIndex
+    const startInLine = rowIndexInLine * width
+    const endInLine = startInLine + width
+    const rowInLine = line.slice(startInLine, endInLine)
+    console.log(rowInLine.map(c => c[1]).join(''))
+  }
+  console.log('-----')
+}
+
 Terminal.prototype.refresh = function(start, end, queue) {
   console.log('****refreshing****')
   var self = this;
@@ -1063,7 +1082,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
   }
 
   var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
-  var lineContainingRowIndex, rowIndexInLine, startIndexInLine, endIndexInLine;
+  var lineContainingRowIndex, rowIndexInLine, startIndexInLine, endIndexInLine, lineRowDifference, startWithDiff, endWithDiff;
   // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
   if (end - start >= this.rows / 2) {
     parent = this.element.parentNode;
@@ -1080,14 +1099,19 @@ Terminal.prototype.refresh = function(start, end, queue) {
   // Then we extract (by reference) all the characters in that row
   // We render those characters into the row index
   width = this.cols;
-  y = start;
 
   if (end >= this.rows.length) {
     this.log('`end` is too large. Most likely a bad CSR.');
     end = this.rows.length - 1;
   }
 
-  for (; y <= end; y++) {
+  // printRows(this.lines, this.lineWrap, start, end, width, this.ydisp) // TODO: removeme
+  lineRowDifference = this.lineWrap.rowCount - this.lines.length;
+  startWithDiff = start + lineRowDifference;
+  endWithDiff = end + lineRowDifference;
+  y = startWithDiff;
+  // for (; y <= end; y++) {
+  for (; y <= endWithDiff; y++) {
     row = y + this.ydisp;
 
     lineContainingRowIndex = this.lineWrap.getRowIndex(row)
@@ -1096,8 +1120,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
     startIndexInLine = rowIndexInLine * width
     endIndexInLine = startIndexInLine + width
     out = '';
-    console.log('row:', row)
-    console.log('lineIndex:', lineContainingRowIndex.lineIndex)
+//    console.log('row:', row)
+//    console.log('this.ydbase:', this.ybase)
+//    console.log('lineIndex:', lineContainingRowIndex.lineIndex)
 
     if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
@@ -1225,7 +1250,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
       out += '</span>';
     }
 
-    this.children[y].innerHTML = out;
+//    console.log('want to set:', y)
+//    console.log('would this be better?:', y - lineRowDifference)
+    this.children[y- lineRowDifference].innerHTML = out;
   }
 
   if (parent) {
@@ -2881,7 +2908,9 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j !== x) {
+    const rowCountBefore = this.lineWrap.rowCount
     this.lineWrap.changeLineLength(this.lines, x)
+    this.ybase += this.lineWrap.rowCount - rowCountBefore
   }
 //  if (j < x) {
 //    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
