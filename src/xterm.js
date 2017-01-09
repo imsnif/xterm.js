@@ -1042,7 +1042,7 @@ function printRows (lines, lineWrap, start, end, width, ydisp) { // TODO: remove
 }
 
 Terminal.prototype.refresh = function(start, end, queue) {
-  console.log('****refreshing****')
+  console.log('****refreshing****', this.x)
   var self = this;
 
   // queue defaults to true
@@ -1121,18 +1121,10 @@ Terminal.prototype.refresh = function(start, end, queue) {
     endIndexInLine = startIndexInLine + width
     out = '';
 
-    console.log('this.y, y, (this.ybase - this.ydisp):', this.y, y, (this.ybase - this.ydisp))
     if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
         && !this.cursorHidden) {
-      const before = line
-        .slice(startIndexInLine, endIndexInLine)
-        .map(c => c[1])
-        .join('')
-      const rowWithoutWhiteSpace = before
-        .replace(/\s\s+$/, ' ')
-      x = rowWithoutWhiteSpace.length
-      // x = this.x;
+      x = this.x;
     } else {
       x = -1;
     }
@@ -2897,6 +2889,7 @@ Terminal.prototype.error = function() {
  * @param {number} y The number of rows to resize to.
  */
 Terminal.prototype.resize = function(x, y) {
+  console.log('resizing, this.x:', this.x)
   var line
   , el
   , i
@@ -2910,32 +2903,6 @@ Terminal.prototype.resize = function(x, y) {
 
   if (x < 1) x = 1;
   if (y < 1) y = 1;
-
-  // resize cols
-  j = this.cols;
-  if (j !== x) {
-    const rowCountBefore = this.lineWrap.rowCount
-    this.lineWrap.changeLineLength(this.lines, x)
-    this.ybase += this.lineWrap.rowCount - rowCountBefore
-  }
-//  if (j < x) {
-//    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-//    i = this.lines.length;
-//    while (i--) {
-//      while (this.lines.get(i).length < x) {
-//        // this.lines.get(i).push(ch);
-//      }
-//    }
-//  } else { // (j > x)
-//    i = this.lines.length;
-//    while (i--) {
-//      if (this.lines.get(i).length > x) {
-//        this.lineWrap.changeLineLength(i, this.lines.get(i).length, x)
-//      }
-//    }
-//  }
-  this.setupStops(j);
-  this.cols = x;
 
   // resize rows
   j = this.rows;
@@ -2983,8 +2950,6 @@ Terminal.prototype.resize = function(x, y) {
       }
     }
   }
-  this.rows = y;
-
   // Make sure that the cursor stays on screen
   if (this.y >= y) {
     this.y = y - 1;
@@ -2992,10 +2957,31 @@ Terminal.prototype.resize = function(x, y) {
   if (addToY) {
     this.y += addToY;
   }
-
-  if (this.x >= x) {
-    this.x = x - 1;
+  // resize cols
+  j = this.cols;
+  if (j !== x) {
+    const lineStatsAtCursor = this.lineWrap.getRow(this.y + this.ydisp)
+    const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
+    const xPositionInRow = this.x <= this.cols ? this.x : this.x - (otherRowsInLine * this.cols)
+    const lineLength = (otherRowsInLine * this.cols) + xPositionInRow
+    this.x = lineLength % x
+    const rowCountBefore = this.lineWrap.rowCount
+    this.lineWrap.changeLineLength(this.lines, x)
+    this.ybase += this.lineWrap.rowCount - rowCountBefore
   }
+  this.setupStops(j);
+
+
+  // if (this.x >= x) {
+    // TODO: CONTINUE HERE
+    // find line by this.y
+    // find length of chars in line up to this.x (old width (this.cols) * number of rows in line -1 (don't count the last line with x in it) plus current this.x)
+    // modulus by width, this is the new this.x
+  // }
+
+
+  this.rows = y;
+  this.cols = x;
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
