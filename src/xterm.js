@@ -1023,26 +1023,8 @@ Terminal.flags = {
  * @param {boolean} queue Whether the refresh should ran right now or be queued
  */
 
-function printRows (lines, lineWrap, start, end, width, ydisp) { // TODO: removeme
-  console.log('-----')
-  const difference = lineWrap.rowCount - lines.length
-  const startWithDiff = start + difference
-  const endWithDiff = end + difference
-  for (let i = startWithDiff; i <= endWithDiff; i ++) {
-    const row = i + ydisp
-    const lineStats = lineWrap.getRowIndex(row)
-    const line = lines.get(lineStats.lineIndex)
-    const rowIndexInLine = row - lineStats.startIndex
-    const startInLine = rowIndexInLine * width
-    const endInLine = startInLine + width
-    const rowInLine = line.slice(startInLine, endInLine)
-    console.log(rowInLine.map(c => c[1]).join(''))
-  }
-  console.log('-----')
-}
-
 Terminal.prototype.refresh = function(start, end, queue) {
-  console.log('****refreshing****', this.x)
+  console.log('****refreshing****', start, end)
   var self = this;
 
   // queue defaults to true
@@ -1091,13 +1073,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
     }
   }
 
-  // TODO:
-  // line: line in this.lines
-  // row: row in this.lineWrap
-  // For each row we'd like to render, we need to find it from the lineWrap instance
-  // To find it, we query it, asking which line in this.lines contains it and its index within that line
-  // Then we extract (by reference) all the characters in that row
-  // We render those characters into the row index
   width = this.cols;
 
   if (end >= this.rows.length) {
@@ -1105,23 +1080,36 @@ Terminal.prototype.refresh = function(start, end, queue) {
     end = this.rows.length - 1;
   }
 
-  // printRows(this.lines, this.lineWrap, start, end, width, this.ydisp) // TODO: removeme
   lineRowDifference = this.lineWrap.rowCount - this.lines.length;
-  startWithDiff = start + lineRowDifference;
-  endWithDiff = end + lineRowDifference;
-  y = startWithDiff;
-  // for (; y <= end; y++) {
-  for (; y <= endWithDiff; y++) {
-    row = y + this.ydisp;
-
+//  startWithDiff = start + lineRowDifference - this.ydisp;
+//  endWithDiff = end + lineRowDifference - this.ydisp;
+//  startWithDiff = start + lineRowDifference;
+//  endWithDiff = end + lineRowDifference;
+  // y = startWithDiff;
+  y = start
+  // for (; y <= endWithDiff; y++) {
+  for (; y <= end; y++) {
+    // row = y + this.ydisp;
+    row = y + this.ydisp
+    // lineContainingRowIndex = this.lineWrap.getRowIndex(row - lineRowDifference)
     lineContainingRowIndex = this.lineWrap.getRowIndex(row)
     line = this.lines.get(lineContainingRowIndex.lineIndex);
+    // rowIndexInLine = row - lineRowDifference - lineContainingRowIndex.startIndex
     rowIndexInLine = row - lineContainingRowIndex.startIndex
     startIndexInLine = rowIndexInLine * width
     endIndexInLine = startIndexInLine + width
     out = '';
 
-    if (this.y === y - (this.ybase - this.ydisp)
+    // if (this.y === y - (this.ybase - this.ydisp)
+//    console.log('line:', line.slice(startIndexInLine, endIndexInLine).map(c => c[1]).join(''))
+//    console.log('y, this.y, this.ybase, rowIndexInLine, lineRowDifference:',
+//      y, this.y, this.ybase, rowIndexInLine, lineRowDifference)
+//    if (y === this.y + rowIndexInLine + 1) {
+//      console.log('cursor!')
+//    }
+    // if (this.y === y - (this.ybase + rowIndexInLine)
+    if (this.y === y
+    // if (this.y === y - lineRowDifference
         && this.cursorState
         && !this.cursorHidden) {
       x = this.x;
@@ -1250,7 +1238,8 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
 //    console.log('want to set:', y)
 //    console.log('would this be better?:', y - lineRowDifference)
-    this.children[y - lineRowDifference].innerHTML = out;
+    this.children[y].innerHTML = out;
+    // this.children[y - lineRowDifference].innerHTML = out;
   }
 
   if (parent) {
@@ -1536,13 +1525,19 @@ Terminal.prototype.write = function(data) {
                 }
               }
 
-              this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
+              const { lineIndex } = this.lineWrap.getRowIndex(this.ybase + this.y)
+              const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ybase + this.y, this.cols)
+              this.lines.get(lineIndex)[relativeX] = [this.curAttr, ch, ch_width];
+              // this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
               this.x++;
               this.updateRange(this.y);
 
               // fullwidth char - set next cell width to zero and advance cursor
               if (ch_width===2) {
-                this.lines.get(row)[this.x] = [this.curAttr, '', 0];
+                const { lineIndex } = this.lineWrap.getRowIndex(this.ybase + this.y)
+                const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ybase + this.y, this.cols)
+                this.lines.get(lineIndex)[relativeX] = [this.curAttr, '', 0];
+                // this.lines.get(row)[this.x] = [this.curAttr, '', 0];
                 this.x++;
               }
             }
@@ -2889,7 +2884,6 @@ Terminal.prototype.error = function() {
  * @param {number} y The number of rows to resize to.
  */
 Terminal.prototype.resize = function(x, y) {
-  console.log('resizing, this.x:', this.x)
   var line
   , el
   , i
@@ -2960,25 +2954,32 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j !== x) {
-    const lineStatsAtCursor = this.lineWrap.getRow(this.y + this.ydisp)
+    // this.lineWrap.fakeTest(this.lines, x)
+//    console.log('this.y            :', this.y)
+//    console.log('getting row       :', this.y + this.ydisp)
+//    console.log('getting row (base):', this.y + this.ybase)
+    // const lineStatsAtCursor = this.lineWrap.getRow(this.y + this.ydisp)
+    const lineStatsAtCursor = this.lineWrap.getRow(this.y)
     const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
     const xPositionInRow = this.x <= this.cols ? this.x : this.x - (otherRowsInLine * this.cols)
     const lineLength = (otherRowsInLine * this.cols) + xPositionInRow
     this.x = lineLength % x
     const rowCountBefore = this.lineWrap.rowCount
     this.lineWrap.changeLineLength(this.lines, x)
-    this.ybase += this.lineWrap.rowCount - rowCountBefore
+    // this.y += otherRowsInLine
+    // TODO: CONTINUE FROM HERE: this should probably be this.ybase and not this.y after all... figure how where this is problematic and fix it
+    // (test by opening terminal, ls -l until cursor overlaps then press space)
+    const newRows = this.lineWrap.rowCount - rowCountBefore
+    console.log('newRows, this.ydisp:', newRows, this.ydisp)
+    this.ybase += newRows
+    this.ydisp += newRows
+    // if (this.y + newRows > this.rows) {
+//    if (this.y + (this.ydisp - newRows) > this.rows) {
+//      this.ydisp += newRows
+//    } else {
+//    }
   }
   this.setupStops(j);
-
-
-  // if (this.x >= x) {
-    // TODO: CONTINUE HERE
-    // find line by this.y
-    // find length of chars in line up to this.x (old width (this.cols) * number of rows in line -1 (don't count the last line with x in it) plus current this.x)
-    // modulus by width, this is the new this.x
-  // }
-
 
   this.rows = y;
   this.cols = x;
@@ -3071,11 +3072,14 @@ Terminal.prototype.nextStop = function(x) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseRight = function(x, y) {
-  var line = this.lines.get(this.ybase + y)
+  var { lineIndex } = this.lineWrap.getRowIndex(this.ybase + y)
+  var relativeX = this.lineWrap.relativeCharPosition(x, this.ybase + y, this.cols)
+  var line = this.lines.get(lineIndex)
   , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
 
-  for (; x < this.cols; x++) {
+  // for (; x < this.cols; x++) {
+  for (; x < line.length; x++) {
     line[x] = ch;
   }
 
