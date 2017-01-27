@@ -15,7 +15,21 @@ interface IRowIndex {
 export class LineWrap<T> {
   private _rowIndices
   constructor(maxLength: number) {
-    this._rowIndices = new CircularList<IRowIndex>(maxLength)
+    this._rowIndices = []
+  }
+  public getLines (lines: any): any { // TODO: rmeove this debug method
+    return lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n')
+  }
+  public printLineIndices (lines) { // TODO: remove this debug method
+    console.log(
+      this._rowIndices
+      .filter(r => r.lineIndex < 35)
+      .map(r => `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${lines.get(r.lineIndex).map(c => c[1]).join('')}`)
+      .join('\n')
+    )
+  }
+  public printLines (lines: any): any { // TODO: rmeove this debug method
+    console.log('lines:', lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n'))
   }
   public getRowIndex(index: number): any {
     const lineContainingRowIndex = this._rowIndices.filter(r => {
@@ -26,8 +40,23 @@ export class LineWrap<T> {
     })[0]
     return lineContainingRowIndex;
   }
+  public addRowToLine(index: number, lines: any): any {
+    const lineContainingRowIndex = this._rowIndices.filter(r => {
+      return r.lineIndex === index
+    })[0] // TODO: remove duplicate logic
+    lineContainingRowIndex.endIndex++
+    for (let i = lineContainingRowIndex.lineIndex + 1; i < this._rowIndices.length; i++) {
+      const lineContainingRowIndex = this._rowIndices.filter(r => {
+        return r.lineIndex === i
+      })[0] // TODO: remove duplicate logic
+      if (lineContainingRowIndex) {
+        lineContainingRowIndex.startIndex++
+        lineContainingRowIndex.endIndex++
+      }
+    }
+  }
   public getRow(index: number): any {
-    return this._rowIndices.get(index)
+    return this._rowIndices[index]
   }
   public relativeCharPosition(charIndex: number, lineIndex: number, width: number): any {
     const lineStats = this.getRowIndex(lineIndex)
@@ -36,41 +65,37 @@ export class LineWrap<T> {
   }
   public push(value: T): void { // TODO: fix this
     const lineIndex = this._rowIndices.length
-      ? this._rowIndices.get(this._rowIndices.length - 1).lineIndex + 1
+      ? this._rowIndices[this._rowIndices.length - 1].lineIndex + 1
       : 0
     const startIndex = this._rowIndices.length
-      ? this._rowIndices.get(this._rowIndices.length - 1).endIndex + 1
+      ? this._rowIndices[this._rowIndices.length - 1].endIndex + 1
       : 0
     const endIndex = startIndex
-    this._rowIndices.push(new RowIndex(lineIndex, startIndex, endIndex))
+    this._rowIndices.push({lineIndex, startIndex, endIndex})
   }
   public changeLineLength (lines: any, length: number) {
-    for (let i = 0; i < this._rowIndices.length; i++) {
-      if (!lines.get(i)) continue
-      const line = lines.get(i)
+    this._rowIndices = this._rowIndices.reduce((memo, lineStats) => {
+      const prevLine = memo.length > 0 ? memo[memo.length - 1] : false
+      const line = lines.get(lineStats.lineIndex)
       const lineWithoutTrailingSpaces = line
-        .map(c => c[1])
-        .join('')
-        .replace(/\s\s+$/, ' ') // TODO: don't create so many arrays
-        // .replace(/\s*$/, '') // TODO: don't create so many arrays
-      const currentLength = lineWithoutTrailingSpaces.length
-      if (length < currentLength) {
-        const newRowCount = Math.ceil(currentLength / length)
-        const startIndex = this._rowIndices.get(i).startIndex
-        this._rowIndices.get(i).endIndex = startIndex + newRowCount - 1
-      } else if (length > currentLength) {
-        const startIndex = this._rowIndices.get(i).startIndex
-        this._rowIndices.get(i).endIndex = startIndex
-      }
-      if (this._rowIndices.get(i + 1) && this._rowIndices.get(i + 1).startIndex > 0) { // next row does not circle back
-        this._rowIndices.get(i + 1).startIndex = this._rowIndices.get(i).endIndex + 1
-      }
-    }
+      .map(c => c[1])
+      .join('')
+      .replace(/\s\s+$/, ' ') // TODO: fix this
+      const lineLength = lineWithoutTrailingSpaces.length
+      const newRowCountInLine = Math.ceil(lineLength / length) > 0
+        ? Math.ceil(lineLength / length)
+        : 1
+      const lineIndex = lineStats.lineIndex
+      const startIndex = prevLine ? prevLine.endIndex + 1 : lineStats.startIndex
+      const endIndex = startIndex + newRowCountInLine - 1
+      memo.push({lineIndex, startIndex, endIndex})
+      return memo
+    }, [])
   }
   public get rowCount(): number {
     let count = 0
     for (let i = 0; i < this._rowIndices.length; i++) {
-      const lineStats = this._rowIndices.get(i)
+      const lineStats = this._rowIndices[i]
       const numRows = lineStats.endIndex - lineStats.startIndex + 1
       count += numRows
     }

@@ -24,6 +24,10 @@ export class CircularList<T> {
     return this._array.length;
   }
 
+  public get lines(): any { // TODO: remove this debug method
+    return this._array
+  }
+
   public set maxLength(newMaxLength: number) {
     // console.log('SETTING MAXLENGTH!!!!')
     // Reconstruct array, starting at index 0. Only transfer values from the
@@ -57,6 +61,10 @@ export class CircularList<T> {
 
   public filter(callbackfn: any): any { // TODO: fix types or find a way to export the filter method directly
     return this._array.filter(callbackfn)
+  }
+
+  public map(callbackfn: any): any { // TODO: remove this dbeug method
+    return this._array.map(callbackfn)
   }
 
   /**

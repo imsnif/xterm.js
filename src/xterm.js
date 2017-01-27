@@ -1024,7 +1024,7 @@ Terminal.flags = {
  */
 
 Terminal.prototype.refresh = function(start, end, queue) {
-  console.log('****refreshing****', start, end)
+  console.log('-----------------refresh-----------------', start, end)
   var self = this;
 
   // queue defaults to true
@@ -1081,37 +1081,28 @@ Terminal.prototype.refresh = function(start, end, queue) {
   }
 
   lineRowDifference = this.lineWrap.rowCount - this.lines.length;
-//  startWithDiff = start + lineRowDifference - this.ydisp;
-//  endWithDiff = end + lineRowDifference - this.ydisp;
-//  startWithDiff = start + lineRowDifference;
-//  endWithDiff = end + lineRowDifference;
-  // y = startWithDiff;
   y = start
-  // for (; y <= endWithDiff; y++) {
   for (; y <= end; y++) {
-    // row = y + this.ydisp;
     row = y + this.ydisp
-    // lineContainingRowIndex = this.lineWrap.getRowIndex(row - lineRowDifference)
     lineContainingRowIndex = this.lineWrap.getRowIndex(row)
-    line = this.lines.get(lineContainingRowIndex.lineIndex);
-    // rowIndexInLine = row - lineRowDifference - lineContainingRowIndex.startIndex
-    rowIndexInLine = row - lineContainingRowIndex.startIndex
-    startIndexInLine = rowIndexInLine * width
-    endIndexInLine = startIndexInLine + width
+    console.log('row:', row)
+    console.log('lineContainingRowIndex:', lineContainingRowIndex)
+    if (!lineContainingRowIndex) {
+      line = this.blankLine()
+      startIndexInLine = 0
+      endIndexInLine = line.length
+    } else {
+      // line = this.lines.get(lineContainingRowIndex.lineIndex);
+      line = this.lines.lines[lineContainingRowIndex.lineIndex]; // TODO: fix this to work with cyclicIndex in Circular List (this.lines.get)
+      rowIndexInLine = row - lineContainingRowIndex.startIndex
+      startIndexInLine = rowIndexInLine * width
+      endIndexInLine = startIndexInLine + width
+    }
     out = '';
-
-    // if (this.y === y - (this.ybase - this.ydisp)
-//    console.log('line:', line.slice(startIndexInLine, endIndexInLine).map(c => c[1]).join(''))
-//    console.log('y, this.y, this.ybase, rowIndexInLine, lineRowDifference:',
-//      y, this.y, this.ybase, rowIndexInLine, lineRowDifference)
-//    if (y === this.y + rowIndexInLine + 1) {
-//      console.log('cursor!')
-//    }
-    // if (this.y === y - (this.ybase + rowIndexInLine)
-    if (this.y === y
-    // if (this.y === y - lineRowDifference
+    if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
         && !this.cursorHidden) {
+      console.log('found x!', this.x)
       x = this.x;
     } else {
       x = -1;
@@ -1120,15 +1111,20 @@ Terminal.prototype.refresh = function(start, end, queue) {
     attr = this.defAttr;
     i = startIndexInLine;
 
+    console.log('line:', line.slice(startIndexInLine, endIndexInLine).map(c => c[1]).join(''))
     for (; i <= endIndexInLine; i++) {
+      console.log('i:', line[i], i, startIndexInLine, endIndexInLine)
       data = line[i] ? line[i][0] : attr;
-      ch = line[i] ? line[i][1] : undefined;
-      ch_width = line[i] ? line[i][2] : undefined;
+      ch = line[i] ? line[i][1] : ' ';
+      ch_width = line[i] ? line[i][2] : 1;
       if (!ch_width)
         continue;
 
-      if (i - startIndexInLine === x) data = -1;
-      // if (i === x - startIndexInLine) data = -1;
+      // if (i - startIndexInLine === x) data = -1;
+      if (i - startIndexInLine === x) {
+        console.log('iiii:', i)
+        data = -1;
+      }
 
       if (data !== attr) {
         if (attr !== this.defAttr) {
@@ -1136,6 +1132,8 @@ Terminal.prototype.refresh = function(start, end, queue) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
+            console.log('this.defAttr:', this.defAttr)
+            console.log('is is cursor!')
             out += '<span class="reverse-video terminal-cursor';
             if (this.cursorBlink) {
               out += ' blinking';
@@ -1236,8 +1234,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
       out += '</span>';
     }
 
-//    console.log('want to set:', y)
-//    console.log('would this be better?:', y - lineRowDifference)
     this.children[y].innerHTML = out;
     // this.children[y - lineRowDifference].innerHTML = out;
   }
@@ -1372,6 +1368,7 @@ Terminal.prototype.scrollToBottom = function() {
  * @param {string} text The text to write to the terminal.
  */
 Terminal.prototype.write = function(data) {
+  console.log(`writing: '''''''${JSON.stringify(data)}'''''''`)
   var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
   this.refreshStart = this.y;
@@ -1384,6 +1381,7 @@ Terminal.prototype.write = function(data) {
   }
 
   for (; i < l; i++) {
+    let debugLines = this.lineWrap.getLines(this.lines) // TODO: removeme
     ch = data[i];
 
     // FIXME: higher chars than 0xa0 are not allowed in escape sequences
@@ -1493,8 +1491,11 @@ Terminal.prototype.write = function(data) {
               // TODO: needs a global min terminal width of 2
               if (this.x+ch_width-1 >= this.cols) {
                 // autowrap - DECAWM
+                // TODO: CONT HERE - for some reason, empty lines are added in the middle here at some point... need to find their source and fix it
                 if (this.wraparoundMode) {
                   this.x = 0;
+                  this.lineWrap.addRowToLine(this.y + this.ydisp, this.lines) // TODO: remove this lines
+                  // this.lineWrap.addRowToLine(this.y, this.lines) // TODO: remove this lines
                   this.y++;
                   if (this.y > this.scrollBottom) {
                     this.y--;
@@ -1525,17 +1526,19 @@ Terminal.prototype.write = function(data) {
                 }
               }
 
-              const { lineIndex } = this.lineWrap.getRowIndex(this.ybase + this.y)
-              const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ybase + this.y, this.cols)
+              const { lineIndex } = this.lineWrap.getRowIndex(this.ydisp + this.y)
+              const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ydisp + this.y, this.cols)
               this.lines.get(lineIndex)[relativeX] = [this.curAttr, ch, ch_width];
               // this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
+              console.log('this.x before:', this.x, `'${JSON.stringify(ch)}'`)
               this.x++;
+              console.log('this.x after:', this.x)
               this.updateRange(this.y);
 
               // fullwidth char - set next cell width to zero and advance cursor
               if (ch_width===2) {
-                const { lineIndex } = this.lineWrap.getRowIndex(this.ybase + this.y)
-                const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ybase + this.y, this.cols)
+                const { lineIndex } = this.lineWrap.getRowIndex(this.ydisp + this.y)
+                const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ydisp + this.y, this.cols)
                 this.lines.get(lineIndex)[relativeX] = [this.curAttr, '', 0];
                 // this.lines.get(row)[this.x] = [this.curAttr, '', 0];
                 this.x++;
@@ -2415,6 +2418,7 @@ Terminal.prototype.write = function(data) {
     }
   }
 
+  console.log('this y, this.ydisp, this.ybase, this.x:', this.y, this.ydisp, this.ybase, this.x)
   this.updateRange(this.y);
   this.refresh(this.refreshStart, this.refreshEnd);
 };
@@ -2954,11 +2958,6 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j !== x) {
-    // this.lineWrap.fakeTest(this.lines, x)
-//    console.log('this.y            :', this.y)
-//    console.log('getting row       :', this.y + this.ydisp)
-//    console.log('getting row (base):', this.y + this.ybase)
-    // const lineStatsAtCursor = this.lineWrap.getRow(this.y + this.ydisp)
     const lineStatsAtCursor = this.lineWrap.getRow(this.y)
     const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
     const xPositionInRow = this.x <= this.cols ? this.x : this.x - (otherRowsInLine * this.cols)
@@ -2966,13 +2965,23 @@ Terminal.prototype.resize = function(x, y) {
     this.x = lineLength % x
     const rowCountBefore = this.lineWrap.rowCount
     this.lineWrap.changeLineLength(this.lines, x)
-    // this.y += otherRowsInLine
-    // TODO: CONTINUE FROM HERE: this should probably be this.ybase and not this.y after all... figure how where this is problematic and fix it
-    // (test by opening terminal, ls -l until cursor overlaps then press space)
     const newRows = this.lineWrap.rowCount - rowCountBefore
-    console.log('newRows, this.ydisp:', newRows, this.ydisp)
-    this.ybase += newRows
-    this.ydisp += newRows
+    if (this.y + newRows > this.scrollBottom) {
+      const yScrollBottomDiff = this.scrollBottom - this.y
+      this.y = this.scrollBottom
+      this.ydisp += newRows - yScrollBottomDiff // TODO: ybase?
+    } else if (newRows < 0 && this.y + newRows < 0) {
+      const prevY = this.y
+      this.y = 0
+      this.ydisp -= newRows // TODO: ybase?
+    } else {
+      this.y += newRows
+    }
+//    if (this.ydisp + newRows < 0) { // TODO: ybase?
+//      this.y += this.ydisp + newRows
+//    }
+//    this.ybase = this.ybase + newRows > 0 ? this.ybase + newRows : 0
+//    this.ydisp = this.ydisp + newRows > 0 ? this.ydisp + newRows : 0
     // if (this.y + newRows > this.rows) {
 //    if (this.y + (this.ydisp - newRows) > this.rows) {
 //      this.ydisp += newRows
