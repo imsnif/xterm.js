@@ -1107,7 +1107,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
     attr = this.defAttr;
     i = startIndexInLine;
 
-    for (; i <= endIndexInLine; i++) {
+    for (; i < endIndexInLine; i++) {
       data = line[i] ? line[i][0] : this.defAttr;
       ch = line[i] ? line[i][1] : ' ';
       ch_width = line[i] ? line[i][2] : 1;
