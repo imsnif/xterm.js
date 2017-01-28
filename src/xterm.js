@@ -1024,7 +1024,6 @@ Terminal.flags = {
  */
 
 Terminal.prototype.refresh = function(start, end, queue) {
-  console.log('-----------------refresh-----------------', start, end)
   var self = this;
 
   // queue defaults to true
@@ -1085,8 +1084,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
   for (; y <= end; y++) {
     row = y + this.ydisp
     lineContainingRowIndex = this.lineWrap.getRowIndex(row)
-    console.log('row:', row)
-    console.log('lineContainingRowIndex:', lineContainingRowIndex)
     if (!lineContainingRowIndex) {
       line = this.blankLine()
       startIndexInLine = 0
@@ -1102,7 +1099,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
     if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
         && !this.cursorHidden) {
-      console.log('found x!', this.x)
       x = this.x;
     } else {
       x = -1;
@@ -1111,9 +1107,8 @@ Terminal.prototype.refresh = function(start, end, queue) {
     attr = this.defAttr;
     i = startIndexInLine;
 
-    console.log('line:', line.slice(startIndexInLine, endIndexInLine).map(c => c[1]).join(''))
     for (; i <= endIndexInLine; i++) {
-      console.log('i:', line[i], i, startIndexInLine, endIndexInLine)
+      console.log('i, i - startIndexInLine, x:', i, i - startIndexInLine, x)
       data = line[i] ? line[i][0] : attr;
       ch = line[i] ? line[i][1] : ' ';
       ch_width = line[i] ? line[i][2] : 1;
@@ -1122,18 +1117,17 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
       // if (i - startIndexInLine === x) data = -1;
       if (i - startIndexInLine === x) {
-        console.log('iiii:', i)
+        console.log('is curser')
         data = -1;
       }
 
       if (data !== attr) {
         if (attr !== this.defAttr) {
+          console.log('unspan')
           out += '</span>';
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            console.log('this.defAttr:', this.defAttr)
-            console.log('is is cursor!')
             out += '<span class="reverse-video terminal-cursor';
             if (this.cursorBlink) {
               out += ' blinking';
@@ -1368,7 +1362,6 @@ Terminal.prototype.scrollToBottom = function() {
  * @param {string} text The text to write to the terminal.
  */
 Terminal.prototype.write = function(data) {
-  console.log(`writing: '''''''${JSON.stringify(data)}'''''''`)
   var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
   this.refreshStart = this.y;
@@ -1530,9 +1523,7 @@ Terminal.prototype.write = function(data) {
               const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ydisp + this.y, this.cols)
               this.lines.get(lineIndex)[relativeX] = [this.curAttr, ch, ch_width];
               // this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
-              console.log('this.x before:', this.x, `'${JSON.stringify(ch)}'`)
               this.x++;
-              console.log('this.x after:', this.x)
               this.updateRange(this.y);
 
               // fullwidth char - set next cell width to zero and advance cursor
@@ -2418,7 +2409,6 @@ Terminal.prototype.write = function(data) {
     }
   }
 
-  console.log('this y, this.ydisp, this.ybase, this.x:', this.y, this.ydisp, this.ybase, this.x)
   this.updateRange(this.y);
   this.refresh(this.refreshStart, this.refreshEnd);
 };
