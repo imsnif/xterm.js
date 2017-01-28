@@ -1108,22 +1108,16 @@ Terminal.prototype.refresh = function(start, end, queue) {
     i = startIndexInLine;
 
     for (; i <= endIndexInLine; i++) {
-      console.log('i, i - startIndexInLine, x:', i, i - startIndexInLine, x)
-      data = line[i] ? line[i][0] : attr;
+      data = line[i] ? line[i][0] : this.defAttr;
       ch = line[i] ? line[i][1] : ' ';
       ch_width = line[i] ? line[i][2] : 1;
       if (!ch_width)
         continue;
 
-      // if (i - startIndexInLine === x) data = -1;
-      if (i - startIndexInLine === x) {
-        console.log('is curser')
-        data = -1;
-      }
+      if (i - startIndexInLine === x) data = -1;
 
       if (data !== attr) {
         if (attr !== this.defAttr) {
-          console.log('unspan')
           out += '</span>';
         }
         if (data !== this.defAttr) {
