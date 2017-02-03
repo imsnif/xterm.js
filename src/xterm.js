@@ -1081,6 +1081,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
   lineRowDifference = this.lineWrap.rowCount - this.lines.length;
   y = start
+  console.log('this.y, this.ydisp, this.ybase:', this.y, this.ydisp, this.ybase)
   for (; y <= end; y++) {
     row = y + this.ydisp
     lineContainingRowIndex = this.lineWrap.getRowIndex(row)
@@ -1089,14 +1090,14 @@ Terminal.prototype.refresh = function(start, end, queue) {
       startIndexInLine = 0
       endIndexInLine = line.length
     } else {
-      // line = this.lines.get(lineContainingRowIndex.lineIndex);
-      line = this.lines.lines[lineContainingRowIndex.lineIndex]; // TODO: fix this to work with cyclicIndex in Circular List (this.lines.get)
+      line = this.lines.get(lineContainingRowIndex.lineIndex);
       rowIndexInLine = row - lineContainingRowIndex.startIndex
       startIndexInLine = rowIndexInLine * width
       endIndexInLine = startIndexInLine + width
     }
     out = '';
-    if (this.y === y - (this.ybase - this.ydisp)
+    // if (this.y === y - (this.ybase - this.ydisp)
+    if (this.y === y
         && this.cursorState
         && !this.cursorHidden) {
       x = this.x;
@@ -1368,8 +1369,11 @@ Terminal.prototype.write = function(data) {
   }
 
   for (; i < l; i++) {
-    let debugLines = this.lineWrap.getLines(this.lines) // TODO: removeme
     ch = data[i];
+//    if (i > 138) {
+//      this.lineWrap.printLineIndices(this.lines, this.cols)
+//      debugger;
+//    }
 
     // FIXME: higher chars than 0xa0 are not allowed in escape sequences
     //        --> maybe move to default
@@ -1478,11 +1482,9 @@ Terminal.prototype.write = function(data) {
               // TODO: needs a global min terminal width of 2
               if (this.x+ch_width-1 >= this.cols) {
                 // autowrap - DECAWM
-                // TODO: CONT HERE - for some reason, empty lines are added in the middle here at some point... need to find their source and fix it
                 if (this.wraparoundMode) {
                   this.x = 0;
                   this.lineWrap.addRowToLine(this.y + this.ydisp, this.lines) // TODO: remove this lines
-                  // this.lineWrap.addRowToLine(this.y, this.lines) // TODO: remove this lines
                   this.y++;
                   if (this.y > this.scrollBottom) {
                     this.y--;
@@ -1494,7 +1496,7 @@ Terminal.prototype.write = function(data) {
                     continue;
                 }
               }
-              row = this.y + this.ybase;
+              // row = this.y + this.ybase;
 
               // insert mode: move characters to right
               if (this.insertMode) {
@@ -2950,26 +2952,49 @@ Terminal.prototype.resize = function(x, y) {
     const rowCountBefore = this.lineWrap.rowCount
     this.lineWrap.changeLineLength(this.lines, x)
     const newRows = this.lineWrap.rowCount - rowCountBefore
-    if (this.y + newRows > this.scrollBottom) {
-      const yScrollBottomDiff = this.scrollBottom - this.y
-      this.y = this.scrollBottom
-      this.ydisp += newRows - yScrollBottomDiff // TODO: ybase?
-    } else if (newRows < 0 && this.y + newRows < 0) {
-      const prevY = this.y
-      this.y = 0
-      this.ydisp -= newRows // TODO: ybase?
-    } else {
-      this.y += newRows
+    console.log('***this.y, newRows, this.scrollBottom', this.y, newRows, this.scrollBottom)
+    if (newRows < 0) {
+      console.log('less than 0', newRows)
+      console.log('before:', this.y, this.ybase, this.ydisp)
+      if (this.ybase + newRows < 0) {
+        this.y = this.scrollBottom + (this.ybase + newRows)
+      }
+      this.ybase = this.ybase + newRows < 0 ? 0 : this.ybase + newRows
+      this.ydisp = this.ydisp + newRows < 0 ? 0 : this.ydisp + newRows
+      console.log('after:', this.y, this.ybase, this.ydisp)
+    } else if (newRows > 0) {
+      this.y = this.y + newRows > this.scrollBottom
+        ? this.scrollBottom
+        : this.y + newRows
+      this.ybase += newRows
+      this.ydisp += newRows
     }
-//    if (this.ydisp + newRows < 0) { // TODO: ybase?
-//      this.y += this.ydisp + newRows
-//    }
-//    this.ybase = this.ybase + newRows > 0 ? this.ybase + newRows : 0
-//    this.ydisp = this.ydisp + newRows > 0 ? this.ydisp + newRows : 0
-    // if (this.y + newRows > this.rows) {
-//    if (this.y + (this.ydisp - newRows) > this.rows) {
-//      this.ydisp += newRows
+//    if (this.y + newRows > this.scrollBottom) {
+//      console.log('this.y + newRows > this.scrollBottom')
+//      const yScrollBottomDiff = this.scrollBottom - this.y
+//      this.y = this.scrollBottom
+//      this.ydisp += newRows - yScrollBottomDiff // TODO: ybase?
+//      this.ybase = this.ydisp > this.ybase ? this.ydisp : this.ybase
+//    } else if (this.y + newRows < 0) {
+//      console.log('this.y + newRows < 0')
+//      console.log('this.y, this.ydisp, this.ybase, newRows:', this.y, this.ydisp, this.ybase, newRows)
+//      const yZeroDiff = this.y + newRows
+//      this.ydisp += yZeroDiff
+//      this.ybase += yZeroDiff
+//      this.y = 0
+//    } else if (newRows < 0 && this.y + newRows < 0) {
+//      console.log('newRows < 0 && this.y + newRows < 0')
+//      this.y = 0
+//      this.ydisp -= newRows // TODO: ybase?
+//      this.ybase -= newRows
+//    } else if (newRows < 0) {
+//      console.log('newRows < 0')
+//      this.y = this.y + (this.ydisp + newRows)
+//      this.ybase = this.ybase + newRows < 0 ? 0 : this.ybase + newRows
+//      this.ydisp = this.ydisp + newRows < 0 ? 0 : this.ydisp + newRows
 //    } else {
+//      console.log('else')
+//      this.y += newRows
 //    }
   }
   this.setupStops(j);

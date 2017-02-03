@@ -20,11 +20,24 @@ export class LineWrap<T> {
   public getLines (lines: any): any { // TODO: rmeove this debug method
     return lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n')
   }
-  public printLineIndices (lines) { // TODO: remove this debug method
+  public printLineIndices (lines, width) { // TODO: remove this debug method
+    console.log('printing line indices')
     console.log(
       this._rowIndices
       .filter(r => r.lineIndex < 35)
-      .map(r => `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${lines.get(r.lineIndex).map(c => c[1]).join('')}`)
+      .map(r => {
+        const fullLine = lines.get(r.lineIndex).map(c => c[1])
+        // TODO: CONT FROM HERE: DEBUG THIS
+        const stringifiedLines = Array.apply(null, Array(r.endIndex - r.startIndex + 1))
+        .map((q, ind) => {
+          const startIndexInLine = ind * width
+          const endIndexInLine = startIndexInLine + width
+          // console.log('startIndexInLine, endIndexInLine:', startIndexInLine, endIndexInLine, fullLine.length)
+          return fullLine.slice(startIndexInLine, endIndexInLine).join('')
+        })
+        // return `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${startIndexInLine}, ${endIndexInLine}, ${stringifiedLine}`
+        return `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${fullLine.join('')}, \n ${stringifiedLines.join('|\n')}`
+      })
       .join('\n')
     )
   }
@@ -42,7 +55,8 @@ export class LineWrap<T> {
   }
   public addRowToLine(index: number, lines: any): any {
     const lineContainingRowIndex = this._rowIndices.filter(r => {
-      return r.lineIndex === index
+      // return r.lineIndex === index
+      return r.startIndex >= index && r.endIndex <= index
     })[0] // TODO: remove duplicate logic
     lineContainingRowIndex.endIndex++
     for (let i = lineContainingRowIndex.lineIndex + 1; i < this._rowIndices.length; i++) {
@@ -80,7 +94,7 @@ export class LineWrap<T> {
       const lineWithoutTrailingSpaces = line
       .map(c => c[1])
       .join('')
-      .replace(/\s\s+$/, ' ') // TODO: fix this
+      .replace(/\s\s+$/, '') // TODO: fix this
       const lineLength = lineWithoutTrailingSpaces.length
       const newRowCountInLine = Math.ceil(lineLength / length) > 0
         ? Math.ceil(lineLength / length)
