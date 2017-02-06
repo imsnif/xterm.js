@@ -1081,7 +1081,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
   lineRowDifference = this.lineWrap.rowCount - this.lines.length;
   y = start
-  console.log('this.y, this.ydisp, this.ybase:', this.y, this.ydisp, this.ybase)
   for (; y <= end; y++) {
     row = y + this.ydisp
     lineContainingRowIndex = this.lineWrap.getRowIndex(row)
@@ -1096,8 +1095,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
       endIndexInLine = startIndexInLine + width
     }
     out = '';
-    // if (this.y === y - (this.ybase - this.ydisp)
-    if (this.y === y
+    if (this.y === y - (this.ybase - this.ydisp)
         && this.cursorState
         && !this.cursorHidden) {
       x = this.x;
@@ -1224,7 +1222,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
     }
 
     this.children[y].innerHTML = out;
-    // this.children[y - lineRowDifference].innerHTML = out;
   }
 
   if (parent) {
@@ -1370,10 +1367,6 @@ Terminal.prototype.write = function(data) {
 
   for (; i < l; i++) {
     ch = data[i];
-//    if (i > 138) {
-//      this.lineWrap.printLineIndices(this.lines, this.cols)
-//      debugger;
-//    }
 
     // FIXME: higher chars than 0xa0 are not allowed in escape sequences
     //        --> maybe move to default
@@ -1484,7 +1477,7 @@ Terminal.prototype.write = function(data) {
                 // autowrap - DECAWM
                 if (this.wraparoundMode) {
                   this.x = 0;
-                  this.lineWrap.addRowToLine(this.y + this.ydisp, this.lines) // TODO: remove this lines
+                  this.lineWrap.addRowToLine(this.y + this.ybase, this.lines) // TODO: remove this lines
                   this.y++;
                   if (this.y > this.scrollBottom) {
                     this.y--;
@@ -1496,7 +1489,7 @@ Terminal.prototype.write = function(data) {
                     continue;
                 }
               }
-              // row = this.y + this.ybase;
+              row = this.y + this.ybase;
 
               // insert mode: move characters to right
               if (this.insertMode) {
@@ -1515,10 +1508,11 @@ Terminal.prototype.write = function(data) {
                 }
               }
 
-              const { lineIndex } = this.lineWrap.getRowIndex(this.ydisp + this.y)
-              const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ydisp + this.y, this.cols)
+              // const { lineIndex } = this.lineWrap.getRowIndex(this.ydisp + this.y)
+              const { lineIndex } = this.lineWrap.getRowIndex(this.ybase + this.y)
+              // const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ydisp + this.y, this.cols)
+              const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ybase + this.y, this.cols)
               this.lines.get(lineIndex)[relativeX] = [this.curAttr, ch, ch_width];
-              // this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
               this.x++;
               this.updateRange(this.y);
 
@@ -2944,58 +2938,41 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j !== x) {
-    const lineStatsAtCursor = this.lineWrap.getRow(this.y)
-    const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
-    const xPositionInRow = this.x <= this.cols ? this.x : this.x - (otherRowsInLine * this.cols)
-    const lineLength = (otherRowsInLine * this.cols) + xPositionInRow
-    this.x = lineLength % x
     const rowCountBefore = this.lineWrap.rowCount
     this.lineWrap.changeLineLength(this.lines, x)
     const newRows = this.lineWrap.rowCount - rowCountBefore
-    console.log('***this.y, newRows, this.scrollBottom', this.y, newRows, this.scrollBottom)
+    const prevY = this.y
     if (newRows < 0) {
-      console.log('less than 0', newRows)
-      console.log('before:', this.y, this.ybase, this.ydisp)
       if (this.ybase + newRows < 0) {
-        this.y = this.scrollBottom + (this.ybase + newRows)
+        const difference = this.ybase + newRows
+        this.ybase = 0
+        this.ydisp = 0
+        this.y += difference
+      } else {
+        this.ybase += newRows
+        this.ydisp += newRows
       }
-      this.ybase = this.ybase + newRows < 0 ? 0 : this.ybase + newRows
-      this.ydisp = this.ydisp + newRows < 0 ? 0 : this.ydisp + newRows
-      console.log('after:', this.y, this.ybase, this.ydisp)
     } else if (newRows > 0) {
-      this.y = this.y + newRows > this.scrollBottom
-        ? this.scrollBottom
-        : this.y + newRows
-      this.ybase += newRows
-      this.ydisp += newRows
+      if (this.y + newRows > this.scrollBottom) {
+        const difference = (this.y + newRows) - this.scrollBottom
+        this.ybase += difference
+        this.ydisp += difference
+        this.y = this.scrollBottom
+        for (let i = 0; i < difference; i += 1) { // TODO: fix this
+          this.lines.push(this.blankLine())
+        }
+      } else {
+        this.y += newRows
+      }
     }
-//    if (this.y + newRows > this.scrollBottom) {
-//      console.log('this.y + newRows > this.scrollBottom')
-//      const yScrollBottomDiff = this.scrollBottom - this.y
-//      this.y = this.scrollBottom
-//      this.ydisp += newRows - yScrollBottomDiff // TODO: ybase?
-//      this.ybase = this.ydisp > this.ybase ? this.ydisp : this.ybase
-//    } else if (this.y + newRows < 0) {
-//      console.log('this.y + newRows < 0')
-//      console.log('this.y, this.ydisp, this.ybase, newRows:', this.y, this.ydisp, this.ybase, newRows)
-//      const yZeroDiff = this.y + newRows
-//      this.ydisp += yZeroDiff
-//      this.ybase += yZeroDiff
-//      this.y = 0
-//    } else if (newRows < 0 && this.y + newRows < 0) {
-//      console.log('newRows < 0 && this.y + newRows < 0')
-//      this.y = 0
-//      this.ydisp -= newRows // TODO: ybase?
-//      this.ybase -= newRows
-//    } else if (newRows < 0) {
-//      console.log('newRows < 0')
-//      this.y = this.y + (this.ydisp + newRows)
-//      this.ybase = this.ybase + newRows < 0 ? 0 : this.ybase + newRows
-//      this.ydisp = this.ydisp + newRows < 0 ? 0 : this.ydisp + newRows
-//    } else {
-//      console.log('else')
-//      this.y += newRows
-//    }
+    // const lineStatsAtCursor = this.lineWrap.getRow(this.y + this.ybase)
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(prevY + this.ybase)
+    const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
+    // const xPositionInRow = this.x <= this.cols ? this.x : this.x - (otherRowsInLine * this.cols) // TODO: x instead of this.cols?
+    const xPositionInRow = this.x <= x ? this.x : this.x - (otherRowsInLine * x) // TODO: x instead of this.cols?
+    // const lineLength = (otherRowsInLine * this.cols) + xPositionInRow
+    const lineLength = (otherRowsInLine * x) + xPositionInRow
+    this.x = lineLength % x
   }
   this.setupStops(j);
 

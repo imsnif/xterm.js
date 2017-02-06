@@ -16,6 +16,9 @@ export class LineWrap<T> {
   private _rowIndices
   constructor(maxLength: number) {
     this._rowIndices = []
+    for (let i = 0; i <= maxLength; i += 1) {
+      this._rowIndices[i] = {lineIndex: i, startIndex: i, endIndex: i}
+    }
   }
   public getLines (lines: any): any { // TODO: rmeove this debug method
     return lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n')
@@ -24,25 +27,26 @@ export class LineWrap<T> {
     console.log('printing line indices')
     console.log(
       this._rowIndices
-      .filter(r => r.lineIndex < 35)
+      .filter(r => r.lineIndex < 50)
       .map(r => {
-        const fullLine = lines.get(r.lineIndex).map(c => c[1])
-        // TODO: CONT FROM HERE: DEBUG THIS
-        const stringifiedLines = Array.apply(null, Array(r.endIndex - r.startIndex + 1))
-        .map((q, ind) => {
-          const startIndexInLine = ind * width
-          const endIndexInLine = startIndexInLine + width
-          // console.log('startIndexInLine, endIndexInLine:', startIndexInLine, endIndexInLine, fullLine.length)
-          return fullLine.slice(startIndexInLine, endIndexInLine).join('')
-        })
-        // return `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${startIndexInLine}, ${endIndexInLine}, ${stringifiedLine}`
-        return `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${fullLine.join('')}, \n ${stringifiedLines.join('|\n')}`
+        const line = lines.get(r.lineIndex)
+        if (line) {
+          const fullLine = line.map(c => c[1])
+          const stringifiedLines = Array.apply(null, Array(r.endIndex - r.startIndex + 1))
+          .map((q, ind) => {
+            const startIndexInLine = ind * width
+            const endIndexInLine = startIndexInLine + width
+            return fullLine.slice(startIndexInLine, endIndexInLine).join('')
+          })
+          return `${r.lineIndex}, ${r.startIndex}, ${r.endIndex}, ${fullLine.join('')}, \n ${stringifiedLines.join('|\n')}`
+        }
       })
+      .filter(t => t)
       .join('\n')
     )
   }
   public printLines (lines: any): any { // TODO: rmeove this debug method
-    console.log('lines:', lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n'))
+    console.log('lines:', lines.lines.filter((line, ind) => ind < 100).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n'))
   }
   public getRowIndex(index: number): any {
     const lineContainingRowIndex = this._rowIndices.filter(r => {
@@ -78,31 +82,38 @@ export class LineWrap<T> {
     return charIndexDifference
   }
   public push(value: T): void { // TODO: fix this
-    const lineIndex = this._rowIndices.length
-      ? this._rowIndices[this._rowIndices.length - 1].lineIndex + 1
-      : 0
-    const startIndex = this._rowIndices.length
-      ? this._rowIndices[this._rowIndices.length - 1].endIndex + 1
-      : 0
-    const endIndex = startIndex
-    this._rowIndices.push({lineIndex, startIndex, endIndex})
+//    const lineIndex = this._rowIndices.length
+//      ? this._rowIndices[this._rowIndices.length - 1].lineIndex + 1
+//      : 0
+//    const startIndex = this._rowIndices.length
+//      ? this._rowIndices[this._rowIndices.length - 1].endIndex + 1
+//      : 0
+//    const endIndex = startIndex
+//    this._rowIndices.push({lineIndex, startIndex, endIndex})
   }
   public changeLineLength (lines: any, length: number) {
     this._rowIndices = this._rowIndices.reduce((memo, lineStats) => {
       const prevLine = memo.length > 0 ? memo[memo.length - 1] : false
       const line = lines.get(lineStats.lineIndex)
-      const lineWithoutTrailingSpaces = line
-      .map(c => c[1])
-      .join('')
-      .replace(/\s\s+$/, '') // TODO: fix this
-      const lineLength = lineWithoutTrailingSpaces.length
-      const newRowCountInLine = Math.ceil(lineLength / length) > 0
-        ? Math.ceil(lineLength / length)
-        : 1
-      const lineIndex = lineStats.lineIndex
-      const startIndex = prevLine ? prevLine.endIndex + 1 : lineStats.startIndex
-      const endIndex = startIndex + newRowCountInLine - 1
-      memo.push({lineIndex, startIndex, endIndex})
+      if (line) {
+        const lineWithoutTrailingSpaces = line
+        .map(c => c[1])
+        .join('')
+        .replace(/\s\s+$/, '') // TODO: fix this
+        const lineLength = lineWithoutTrailingSpaces.length
+        const newRowCountInLine = Math.ceil(lineLength / length) > 0
+          ? Math.ceil(lineLength / length)
+          : 1
+        const lineIndex = lineStats.lineIndex
+        const startIndex = prevLine ? prevLine.endIndex + 1 : lineStats.startIndex
+        const endIndex = startIndex + newRowCountInLine - 1
+        memo.push({lineIndex, startIndex, endIndex})
+      } else {
+        const lineIndex = lineStats.lineIndex
+        const startIndex = prevLine ? prevLine.endIndex + 1 : lineStats.startIndex
+        const endIndex = startIndex + (lineStats.endIndex - lineStats.startIndex)
+        memo.push({lineIndex, startIndex, endIndex})
+      }
       return memo
     }, [])
   }
