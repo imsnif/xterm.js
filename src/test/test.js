@@ -2,6 +2,19 @@ var assert = require('chai').assert;
 var expect = require('chai').expect;
 var Terminal = require('../xterm');
 
+function getWrappedLines (lines, lineWrap, width) {
+  var wrappedLines = []
+  for (var i = 0; i < lineWrap.rowCount; i += 1) {
+    var lineStats = lineWrap.getRowIndex(i)
+    var firstLineCharIndex = width * (i - lineStats.startIndex)
+    var lastLineCharIndex = firstLineCharIndex + width
+    if (lines.get(lineStats.lineIndex)) {
+      wrappedLines[i] = lines.get(lineStats.lineIndex).slice(firstLineCharIndex, lastLineCharIndex)
+    }
+  }
+  return wrappedLines
+}
+
 describe('xterm.js', function() {
   var xterm;
 
@@ -841,4 +854,202 @@ describe('xterm.js', function() {
       expect(xterm.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
+ describe.only('resize', function() {
+    it('reducing terminal width wraps lines', function () {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(50, xterm.rows)
+      // expect(xterm.lines.length).eql(26) // TODO: uncomment this once empty lines are not added
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      expect(
+        wrappedLines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[2]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        wrappedLines[3]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it('reducing terminal width wraps lines to more than one line if needed', function () {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(20, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      // expect(xterm.lines.length).eql(30) TODO: uncomment this when there are no extra line issues
+      expect(
+        wrappedLines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[2]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[3]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[4]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        wrappedLines[5]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        wrappedLines[6]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        wrappedLines[7]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it('increasing terminal width', function() {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(100, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
+      expect(
+        wrappedLines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it('increasing terminal width after it was reduced', function() {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(50, xterm.rows)
+      xterm.resize(100, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      expect(xterm.y).eql(2)
+      // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
+      expect(
+        wrappedLines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it('increasing terminal width after it was reduced and wrapped to multiple lines', function() {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(20, xterm.rows)
+      xterm.resize(100, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
+      expect(
+        wrappedLines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        wrappedLines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it.skip('reducing terminal width keeps relative y position when adding lines', function() {
+      // TODO: fix this - cursor positioning
+      for (var i = 0; i < 24; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.resize(50, xterm.rows)
+      expect(xterm.y).eql(23)
+      expect(xterm.ybase).eql(25)
+      expect(xterm.ydisp).eql(25)
+      // expect(xterm.lines.length).eql(49) TODO: uncomment when no extra lines are added
+    })
+    it.skip('reducing terminal width while scrolled up', function() {
+      // TODO: fix this - cursor positioning
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.ydisp = 23
+      xterm.resize(50, xterm.rows)
+      expect(xterm.y).eql(23)
+      expect(xterm.ybase).eql(77)
+      expect(xterm.ydisp).eql(23)
+      // expect(xterm.lines.length).eql(101) TODO: uncomment when no extra lines are added
+    })
+    it.skip('increasing terminal width while scrolled up', function() {
+      //TODO: fix this - cursor positioning
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.resize(50, xterm.rows)
+      xterm.ydisp = 23
+      xterm.resize(100, xterm.rows)
+      expect(xterm.y).eql(23)
+      expect(xterm.ybase).eql(27)
+      expect(xterm.ydisp).eql(23)
+      // expect(xterm.lines.length).eql(51) TODO: uncomment when no extra lines are added
+    })
+    it.skip('line wrapping does not remove whitespace', function() {
+      // TODO: fix this, white space is added
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(40).join('1 '))
+      }
+      xterm.resize(49, xterm.rows)
+      xterm.resize(80, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      expect(
+        wrappedLines[0].map(c => c[1]).join('')
+      ).eql(
+        Array(40).join('1 ')
+      )
+    })
+  })
 });
