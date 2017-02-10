@@ -854,7 +854,7 @@ describe('xterm.js', function() {
       expect(xterm.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
- describe.only('resize', function() {
+ describe('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
@@ -942,8 +942,8 @@ describe('xterm.js', function() {
       ).eql(true)
     })
     it('increasing terminal width', function() {
-      xterm.writeln(Array(80).join('1'))
-      xterm.writeln(Array(80).join('2'))
+      xterm.writeln(Array(90).join('1'))
+      xterm.writeln(Array(90).join('2'))
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
