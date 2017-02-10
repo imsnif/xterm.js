@@ -6,6 +6,7 @@ function getWrappedLines (lines, lineWrap, width) {
   var wrappedLines = []
   for (var i = 0; i < lineWrap.rowCount; i += 1) {
     var lineStats = lineWrap.getRowIndex(i)
+    if (!lineStats) continue
     var firstLineCharIndex = width * (i - lineStats.startIndex)
     var lastLineCharIndex = firstLineCharIndex + width
     if (lines.get(lineStats.lineIndex)) {
@@ -854,7 +855,7 @@ describe('xterm.js', function() {
       expect(xterm.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
- describe('resize', function() {
+ describe.only('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
@@ -1001,41 +1002,41 @@ describe('xterm.js', function() {
         .every(c => c === '2')
       ).eql(true)
     })
-    it.skip('reducing terminal width keeps relative y position when adding lines', function() {
-      // TODO: fix this - cursor positioning
+    it('reducing terminal width keeps relative y position when adding lines', function() {
       for (var i = 0; i < 24; i += 1) {
         xterm.writeln(Array(80).join('a'))
       }
       xterm.resize(50, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       expect(xterm.y).eql(23)
       expect(xterm.ybase).eql(25)
       expect(xterm.ydisp).eql(25)
-      // expect(xterm.lines.length).eql(49) TODO: uncomment when no extra lines are added
+      expect(wrappedLines.length).eql(49)
     })
-    it.skip('reducing terminal width while scrolled up', function() {
-      // TODO: fix this - cursor positioning
+    it('reducing terminal width while scrolled up', function() {
       for (var i = 0; i < 50; i += 1) {
         xterm.writeln(Array(80).join('a'))
       }
       xterm.ydisp = 23
       xterm.resize(50, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       expect(xterm.y).eql(23)
       expect(xterm.ybase).eql(77)
-      expect(xterm.ydisp).eql(23)
-      // expect(xterm.lines.length).eql(101) TODO: uncomment when no extra lines are added
+      expect(xterm.ydisp).eql(73) // relative scroll position identical to the one before resizing
+      expect(wrappedLines.length).eql(101)
     })
-    it.skip('increasing terminal width while scrolled up', function() {
-      //TODO: fix this - cursor positioning
+    it('increasing terminal width while scrolled up', function() {
       for (var i = 0; i < 50; i += 1) {
         xterm.writeln(Array(80).join('a'))
       }
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       xterm.resize(50, xterm.rows)
       xterm.ydisp = 23
       xterm.resize(100, xterm.rows)
       expect(xterm.y).eql(23)
       expect(xterm.ybase).eql(27)
-      expect(xterm.ydisp).eql(23)
-      // expect(xterm.lines.length).eql(51) TODO: uncomment when no extra lines are added
+      expect(xterm.ydisp).eql(0)
+      expect(wrappedLines.length).eql(51) TODO: uncomment when no extra lines are added
     })
     it.skip('line wrapping does not remove whitespace', function() {
       // TODO: fix this, white space is added
@@ -1067,6 +1068,12 @@ describe('xterm.js', function() {
       // TBD
     })
     it.skip('increasing both vertical and horizontal size unwraps lines properly while scrolling', function () {
+      // TBD
+    })
+    it.skip('decreasing size, writing to buffer, increasing size, writing to buffer and then decreasing again handles wrapping properly', function () {
+      // TBD
+    })
+    it.skip('increasing size, writing to buffer, decreasing size, writing to buffer and then increasing again  handles wrapping properly', function () {
       // TBD
     })
   })
