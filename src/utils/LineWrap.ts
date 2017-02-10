@@ -25,6 +25,9 @@ export class LineWrap<T> {
   public getLines (lines: any): any { // TODO: rmeove this debug method
     return lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n')
   }
+  public get length(): number {
+    return this._length;
+  }
   public set length(newLength: number) {
     if (newLength > this._length) {
       for (let i = this._length; i < newLength; i++) {
@@ -129,7 +132,8 @@ export class LineWrap<T> {
   }
   public get rowCount(): number {
     let count = 0
-    for (let i = 0; i < this._length; i++) {
+    var end = this._length
+    for (let i = 0; i < end; i++) {
       const lineStats = this._rowIndices[i]
       const numRows = lineStats.endIndex - lineStats.startIndex + 1
       count += numRows
