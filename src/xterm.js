@@ -2950,7 +2950,7 @@ Terminal.prototype.resize = function(x, y) {
         this.y += difference
       } else {
         this.ybase += newRows
-        this.ydisp += newRows
+        this.ydisp = this.ydisp + newRows < 0 ? 0 : this.ydisp + newRows
       }
     } else if (newRows > 0) {
       if (this.y + newRows > this.scrollBottom) {
@@ -2958,19 +2958,13 @@ Terminal.prototype.resize = function(x, y) {
         this.ybase += difference
         this.ydisp += difference
         this.y = this.scrollBottom
-        for (let i = 0; i < difference; i += 1) { // TODO: fix this
-          this.lines.push(this.blankLine())
-        }
       } else {
         this.y += newRows
       }
     }
-    // const lineStatsAtCursor = this.lineWrap.getRow(this.y + this.ybase)
     const lineStatsAtCursor = this.lineWrap.getRowIndex(prevY + this.ybase)
     const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
-    // const xPositionInRow = this.x <= this.cols ? this.x : this.x - (otherRowsInLine * this.cols) // TODO: x instead of this.cols?
     const xPositionInRow = this.x <= x ? this.x : this.x - (otherRowsInLine * x) // TODO: x instead of this.cols?
-    // const lineLength = (otherRowsInLine * this.cols) + xPositionInRow
     const lineLength = (otherRowsInLine * x) + xPositionInRow
     this.x = lineLength % x
   }
