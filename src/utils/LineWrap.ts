@@ -14,7 +14,9 @@ interface IRowIndex {
 }
 export class LineWrap<T> {
   private _rowIndices
+  private _length
   constructor(maxLength: number) {
+    this._length = 0
     this._rowIndices = []
     for (let i = 0; i <= maxLength; i += 1) {
       this._rowIndices[i] = {lineIndex: i, startIndex: i, endIndex: i}
@@ -22,6 +24,14 @@ export class LineWrap<T> {
   }
   public getLines (lines: any): any { // TODO: rmeove this debug method
     return lines.lines.filter((line, ind) => ind < 36).map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n')
+  }
+  public set length(newLength: number) {
+    if (newLength > this._length) {
+      for (let i = this._length; i < newLength; i++) {
+        this._rowIndices[i] = {lineIndex: i, startIndex: i, endIndex: i}
+      }
+    }
+    this._length = newLength;
   }
   public printLineIndices (lines, width) { // TODO: remove this debug method
     console.log('printing line indices')
@@ -119,7 +129,7 @@ export class LineWrap<T> {
   }
   public get rowCount(): number {
     let count = 0
-    for (let i = 0; i < this._rowIndices.length; i++) {
+    for (let i = 0; i < this._length; i++) {
       const lineStats = this._rowIndices[i]
       const numRows = lineStats.endIndex - lineStats.startIndex + 1
       count += numRows

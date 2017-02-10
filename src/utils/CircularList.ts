@@ -51,7 +51,7 @@ export class CircularList<T> {
       }
     }
     this._length = newLength;
-    this.emitter.emit('length', newLength)
+    this.emitter.emit('length', this._length)
   }
 
   public get forEach(): (callbackfn: (value: T, index: number, array: T[]) => void) => void {
@@ -106,6 +106,7 @@ export class CircularList<T> {
       }
     } else {
       this._length++;
+      this.emitter.emit('length', this._length)
     }
     this.emitter.emit('push', value)
   }
@@ -115,7 +116,10 @@ export class CircularList<T> {
    * @return The popped value.
    */
   public pop(): T {
-    return this._array[this._getCyclicIndex(this._length-- - 1)];
+    const _arr = this._array[this._getCyclicIndex(this._length-- - 1)];
+    this.emitter.emit('pop')
+    this.emitter.emit('length', this._length)
+    return _arr
   }
 
   /**
@@ -133,6 +137,7 @@ export class CircularList<T> {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
       this._length -= deleteCount;
+      this.emitter.emit('length', this._length)
     }
     if (items && items.length) {
       for (let i = this._length - 1; i >= start; i--) {
@@ -145,8 +150,10 @@ export class CircularList<T> {
       if (this._length + items.length > this.maxLength) {
         this._startIndex += (this._length + items.length) - this.maxLength;
         this._length = this.maxLength;
+        this.emitter.emit('length', this._length)
       } else {
         this._length += items.length;
+        this.emitter.emit('length', this._length)
       }
     }
   }
@@ -161,6 +168,7 @@ export class CircularList<T> {
     }
     this._startIndex += count;
     this._length -= count;
+    this.emitter.emit('length', this._length)
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
@@ -181,8 +189,10 @@ export class CircularList<T> {
       const expandListBy = (start + count + offset) - this._length;
       if (expandListBy > 0) {
         this._length += expandListBy;
+        this.emitter.emit('length', this._length)
         while (this._length > this.maxLength) {
           this._length--;
+          this.emitter.emit('length:', this._length)
           this._startIndex++;
         }
       }

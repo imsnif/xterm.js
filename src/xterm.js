@@ -213,6 +213,7 @@ function Terminal(options) {
   this.lines = new CircularList(this.scrollback);
   this.lineWrap = new LineWrap(this.scrollback);
   this.lines.emitter.on('push', (data) => this.lineWrap.push(data))
+  this.lines.emitter.on('length', (length) => {this.lineWrap.length = length})
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1063,7 +1064,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
   }
 
   var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
-  var lineContainingRowIndex, rowIndexInLine, startIndexInLine, endIndexInLine, lineRowDifference, startWithDiff, endWithDiff;
+  var lineContainingRowIndex, rowIndexInLine, startIndexInLine, endIndexInLine, startWithDiff, endWithDiff;
   // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
   if (end - start >= this.rows / 2) {
     parent = this.element.parentNode;
@@ -1079,7 +1080,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
     end = this.rows.length - 1;
   }
 
-  lineRowDifference = this.lineWrap.rowCount - this.lines.length;
   y = start
   for (; y <= end; y++) {
     row = y + this.ydisp
