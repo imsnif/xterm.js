@@ -859,7 +859,7 @@ describe('xterm.js', function() {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
       xterm.resize(50, xterm.rows)
-      // expect(xterm.lines.length).eql(26) // TODO: uncomment this once empty lines are not added
+      expect(xterm.lines.length).eql(24)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       expect(
         wrappedLines[0]
@@ -891,7 +891,7 @@ describe('xterm.js', function() {
       xterm.writeln(Array(80).join('2'))
       xterm.resize(20, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      // expect(xterm.lines.length).eql(30) TODO: uncomment this when there are no extra line issues
+      expect(xterm.lineWrap.rowCount).eql(30)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -946,7 +946,7 @@ describe('xterm.js', function() {
       xterm.writeln(Array(90).join('2'))
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
+      expect(xterm.lineWrap.rowCount).eql(24)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -967,7 +967,7 @@ describe('xterm.js', function() {
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       expect(xterm.y).eql(2)
-      // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
+      expect(xterm.lineWrap.rowCount).eql(24)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -987,7 +987,7 @@ describe('xterm.js', function() {
       xterm.resize(20, xterm.rows)
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      // expect(xterm.lines.length).eql(24) TODO: uncomment when no extra lines are added
+      expect(xterm.lineWrap.rowCount).eql(24)
       expect(
         wrappedLines[0]
         .map(c => c[1])
