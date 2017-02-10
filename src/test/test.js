@@ -1036,7 +1036,7 @@ describe('xterm.js', function() {
       expect(xterm.y).eql(23)
       expect(xterm.ybase).eql(27)
       expect(xterm.ydisp).eql(0)
-      expect(wrappedLines.length).eql(51) TODO: uncomment when no extra lines are added
+      expect(wrappedLines.length).eql(51)
     })
     it.skip('line wrapping does not remove whitespace', function() {
       // TODO: fix this, white space is added
