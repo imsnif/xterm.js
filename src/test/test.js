@@ -1051,5 +1051,23 @@ describe('xterm.js', function() {
         Array(40).join('1 ')
       )
     })
+    it.skip('cursor x position adjusted to wrapped line end when decreasing size', function () {
+      // TBD
+    })
+    it.skip('cursor x position adjusted to wrapped line end when decreasing size while scrolling', function () {
+      // TBD
+    })
+    it.skip('decreasing both vertical and horizontal size wraps lines properly', function () {
+      // TBD
+    })
+    it.skip('increasing both vertical and horizontal size unwraps lines properly', function () {
+      // TBD
+    })
+    it.skip('decreasing both vertical and horizontal size wraps lines properly while scrolling', function () {
+      // TBD
+    })
+    it.skip('increasing both vertical and horizontal size unwraps lines properly while scrolling', function () {
+      // TBD
+    })
   })
 });
