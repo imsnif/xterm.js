@@ -982,8 +982,8 @@ describe('xterm.js', function() {
       ).eql(true)
     })
     it('increasing terminal width after it was reduced and wrapped to multiple lines', function() {
-      xterm.writeln(Array(80).join('1'))
-      xterm.writeln(Array(80).join('2'))
+      xterm.writeln(Array(90).join('1'))
+      xterm.writeln(Array(90).join('2'))
       xterm.resize(20, xterm.rows)
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
