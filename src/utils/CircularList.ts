@@ -96,7 +96,12 @@ export class CircularList<T> {
    * if the maximum length is reached.
    * @param value The value to push onto the list.
    */
-  public push(value: T): void {
+  public push(value: T, debug?: any): void {
+    if (debug) {
+      console.log('this._array[50]:', this._array[51])
+      console.log('cyclicIndex:', this._getCyclicIndex(this._length))
+      console.log('length:', this._length)
+    }
     this._array[this._getCyclicIndex(this._length)] = value;
 
     if (this._length === this.maxLength) {

@@ -1512,6 +1512,7 @@ Terminal.prototype.write = function(data) {
               const { lineIndex } = this.lineWrap.getRowIndex(this.ybase + this.y)
               // const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ydisp + this.y, this.cols)
               const relativeX = this.lineWrap.relativeCharPosition(this.x, this.ybase + this.y, this.cols)
+              if (!this.lines.get(lineIndex)) this.lines.push(this.blankLine(), true)
               this.lines.get(lineIndex)[relativeX] = [this.curAttr, ch, ch_width];
               this.x++;
               this.updateRange(this.y);
@@ -2962,11 +2963,11 @@ Terminal.prototype.resize = function(x, y) {
         this.y += newRows
       }
     }
-    const lineStatsAtCursor = this.lineWrap.getRowIndex(prevY + this.ybase)
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(this.ybase + this.y)
     const otherRowsInLine = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
-    const xPositionInRow = this.x <= x ? this.x : this.x - (otherRowsInLine * x) // TODO: x instead of this.cols?
-    const lineLength = (otherRowsInLine * x) + xPositionInRow
-    this.x = lineLength % x
+    const xPositionInRow = this.x <= x ? this.x : this.x - (otherRowsInLine * x)
+    const lineLength = x > j ? xPositionInRow + this.cols : (otherRowsInLine * x) + xPositionInRow
+    this.x = lineLength % x || xPositionInRow
   }
   this.setupStops(j);
 

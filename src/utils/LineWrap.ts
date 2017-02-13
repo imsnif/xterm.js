@@ -31,7 +31,9 @@ export class LineWrap<T> {
   public set length(newLength: number) {
     if (newLength > this._length) {
       for (let i = this._length; i < newLength; i++) {
-        this._rowIndices[i] = {lineIndex: i, startIndex: i, endIndex: i}
+        const startIndex = i > 0 ? this._rowIndices[i - 1].endIndex + 1 : 0
+        const endIndex = startIndex
+        this._rowIndices[i] = {lineIndex: i, startIndex, endIndex}
       }
     }
     this._length = newLength;
@@ -40,7 +42,7 @@ export class LineWrap<T> {
     console.log('printing line indices')
     console.log(
       this._rowIndices
-      .filter(r => r.lineIndex < 50)
+      .filter(r => r.lineIndex < 200)
       .map(r => {
         const line = lines.get(r.lineIndex)
         if (line) {

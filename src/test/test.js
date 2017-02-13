@@ -1038,8 +1038,7 @@ describe('xterm.js', function() {
       expect(xterm.ydisp).eql(0)
       expect(wrappedLines.length).eql(51)
     })
-    it.skip('line wrapping does not remove whitespace', function() {
-      // TODO: fix this, white space is added
+    it('line wrapping does not remove whitespace', function() {
       for (var i = 0; i < 50; i += 1) {
         xterm.writeln(Array(40).join('1 '))
       }
@@ -1049,29 +1048,42 @@ describe('xterm.js', function() {
       expect(
         wrappedLines[0].map(c => c[1]).join('')
       ).eql(
-        Array(40).join('1 ')
+        `${Array(40).join('1 ')}  `
       )
     })
-    it.skip('cursor x position adjusted to wrapped line end when decreasing size', function () {
-      // TBD
+    it('cursor x position adjusted to wrapped line end when decreasing size', function () {
+      xterm.write(Array(80).join('a'))
+      xterm.resize(50, xterm.rows)
+      expect(xterm.x).eql(29)
     })
-    it.skip('cursor x position adjusted to wrapped line end when decreasing size while scrolling', function () {
-      // TBD
+    it('cursor x position adjusted to wrapped line end when decreasing size while scrolling', function () {
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(40).join('1 '))
+      }
+      xterm.write(Array(80).join('a'))
+      xterm.ydisp = 20
+      xterm.resize(50, xterm.rows)
+      expect(xterm.x).eql(29)
     })
-    it.skip('decreasing both vertical and horizontal size wraps lines properly', function () {
-      // TBD
-    })
-    it.skip('increasing both vertical and horizontal size unwraps lines properly', function () {
-      // TBD
-    })
-    it.skip('decreasing both vertical and horizontal size wraps lines properly while scrolling', function () {
-      // TBD
-    })
-    it.skip('increasing both vertical and horizontal size unwraps lines properly while scrolling', function () {
-      // TBD
+    it('cursor x position adjusted to unwrapped line end when increasing size', function () {
+      xterm.write(Array(90).join('a'))
+      xterm.resize(95, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      expect(xterm.x).eql(89)
     })
     it.skip('decreasing size, writing to buffer, increasing size, writing to buffer and then decreasing again handles wrapping properly', function () {
-      // TBD
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.resize(50, xterm.rows)
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('b'))
+      }
+      xterm.resize(80, xterm.rows)
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('b'))
+      }
+      xterm.resize(50, xterm.rows)
     })
     it.skip('increasing size, writing to buffer, decreasing size, writing to buffer and then increasing again  handles wrapping properly', function () {
       // TBD
