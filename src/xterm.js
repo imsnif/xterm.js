@@ -1802,53 +1802,37 @@ Terminal.prototype.resize = function(x, y) {
   if (y < 1) y = 1;
 
   // resize cols
-  var origLineCount = this.lines.length
-  this.lines = this.lines
-  .map(l => unpadLine(l))
-  .reduce((memo, l, index) => {
-    // unwrap all lines
-    if (index === 0) {
-      memo.push(removeWrappingFlags(l))
-    } else if (l.some(c => c[3] && c[3] === 'wrapped')) {
-      memo[memo.length - 1] = memo[memo.length - 1].concat(removeWrappingFlags(l))
-    } else {
-      memo.push(removeWrappingFlags(l))
-    }
-    return memo
-  }, [])
-  .map(l => padLine(l, x, this.defAttr))
-  .reduce((memo, l) => {
-    // wrap lines up to x
-    if (unpadLine(l).length > x && l.some(c => c[1] !== ' ')) {
-      var lines = wrapLines(l, x, this.defAttr)
-      return memo.concat(lines)
-    } else {
-      memo.push(l.slice(0, x))
-      return memo
-    }
-  }, [])
-  // update scroll and y position if lines were added or removed
-  var currentLineCount = this.lines.length
-  if (origLineCount < currentLineCount) {
-    var extraLines = currentLineCount - origLineCount
-    if (this.y + extraLines <= this.rows) {
-      this.y += extraLines
-    } else {
-      if (this.ydisp === this.ybase) {
-        this.ybase += extraLines
-        this.ydisp += extraLines
-      } else {
-        this.ybase += extraLines
+  j = this.cols;
+  if (j < x) {
+    const prevStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    const prevLineCountAtCursor = prevStatsAtCursor.endIndex - prevStatsAtCursor.startIndex
+    let rowCount = this.lineWrap.rowCount
+    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    i = this.lines.length;
+    this.lineWrap.changeLineLength(this.lines, x)
+    let newRows = this.lineWrap.rowCount - rowCount
+    while (newRows < 0 && newRows++) {
+      this.y--
+      if (this.y < 0) {
+        this.y++
+        this.ybase--
+        if (this.ydisp - 1 >= 0) this.ydisp--
       }
     }
-  } else {
-    var removedLineCount = origLineCount - currentLineCount
-    if (this.ybase - removedLineCount >= 0) {
-      if (this.ydisp === this.ybase) {
-        this.ybase -= removedLineCount
-        this.ydisp -= removedLineCount
-      } else {
-        this.ybase -= removedLineCount
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    const lineCountAtCursor = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
+    this.x = ((prevLineCountAtCursor - lineCountAtCursor) * this.cols) + this.x
+  } else { // (j > x)
+    let rowCount = this.lineWrap.rowCount
+    i = this.lines.length;
+    this.lineWrap.changeLineLength(this.lines, x)
+    let newRows = this.lineWrap.rowCount - rowCount
+    while (newRows > 0 && newRows--) {
+      this.y++
+      if (this.y > this.scrollBottom) {
+        this.y--
+        this.ybase++
+        if (this.ydisp + 1 <= this.ybase) this.ydisp++
       }
     } else {
       // in this case, counting lines might be erroneous.
@@ -1857,7 +1841,10 @@ Terminal.prototype.resize = function(x, y) {
       this.ydisp = 0
       this.y = lastNonBlankLine(this.lines)
     }
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    this.x = this.x - ((lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex) * x)
   }
+
   this.cols = x;
   this.setupStops(this.cols);
 
