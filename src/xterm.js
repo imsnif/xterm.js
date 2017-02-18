@@ -1740,6 +1740,8 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j < x) {
+    const prevStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    const prevLineCountAtCursor = prevStatsAtCursor.endIndex - prevStatsAtCursor.startIndex
     let rowCount = this.lineWrap.rowCount
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
@@ -1753,6 +1755,9 @@ Terminal.prototype.resize = function(x, y) {
         if (this.ydisp - 1 >= 0) this.ydisp--
       }
     }
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    const lineCountAtCursor = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
+    this.x = ((prevLineCountAtCursor - lineCountAtCursor) * this.cols) + this.x
   } else { // (j > x)
     let rowCount = this.lineWrap.rowCount
     i = this.lines.length;
@@ -1766,7 +1771,10 @@ Terminal.prototype.resize = function(x, y) {
         if (this.ydisp + 1 <= this.ybase) this.ydisp++
       }
     }
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    this.x = this.x - ((lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex) * x)
   }
+
   this.cols = x;
   this.setupStops(this.cols);
 
