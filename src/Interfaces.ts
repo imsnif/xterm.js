@@ -21,6 +21,7 @@ export interface ITerminal {
   ybase: number;
   ydisp: number;
   lines: ICircularList<string>;
+  lineWrap: any; // TODO: fix this
   rows: number;
   cols: number;
   browser: IBrowser;

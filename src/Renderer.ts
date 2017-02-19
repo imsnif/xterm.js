@@ -136,7 +136,13 @@ export class Renderer {
     }
 
     for (; y <= end; y++) {
-      row = y + this._terminal.ydisp;
+      // row = y + this._terminal.ydisp;
+      const lineStats = this._terminal.lineWrap.getRowIndex(y + this._terminal.ydisp)
+      if (!lineStats) {
+        // TODO: find out if this is the same condition as below
+        continue;
+      }
+      row = lineStats.lineIndex
 
       line = this._terminal.lines.get(row);
       if (!line || !this._terminal.children[y]) {
@@ -154,9 +160,16 @@ export class Renderer {
       }
 
       attr = this._terminal.defAttr;
-      i = 0;
 
-      for (; i < width; i++) {
+      // start: row index in line times this.cols
+      // end: start + this.cols
+      const startPosInLine = (y + this._terminal.ydisp - lineStats.startIndex) * this._terminal.cols
+      const endPosInLine = startPosInLine + this._terminal.cols
+      i = startPosInLine
+
+
+      // for (; i < width; i++) {
+      for (; i < endPosInLine; i++) {
         if (!line[i]) {
           // Continue if the character is not available, this means a resize is currently in progress
           continue;
