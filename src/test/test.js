@@ -1089,8 +1089,8 @@ describe('xterm.js', function() {
       expect(xterm.x).eql(89)
     })
     it.skip('decreasing size, writing to buffer, increasing size, writing to buffer and then decreasing again handles wrapping properly', function () {
-      for (var i = 0; i < 50; i += 1) {
-        xterm.writeln(Array(80).join('a'))
+      for (var i = 0; i < 20; i += 1) {
+        xterm.writeln(Array(90).join('a'))
       }
       xterm.resize(50, xterm.rows)
       for (var i = 0; i < 50; i += 1) {
@@ -1098,9 +1098,12 @@ describe('xterm.js', function() {
       }
       xterm.resize(80, xterm.rows)
       for (var i = 0; i < 50; i += 1) {
-        xterm.writeln(Array(80).join('b'))
+        xterm.writeln(Array(90).join('c'))
       }
-      xterm.resize(50, xterm.rows)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      console.log('s:', stringifyLines(wrappedLines))
+      console.log('2x, y:', xterm.x, xterm.y + xterm.ybase)
+//      xterm.resize(50, xterm.rows)
     })
     it.skip('increasing size, writing to buffer, decreasing size, writing to buffer and then increasing again  handles wrapping properly', function () {
       // TBD
