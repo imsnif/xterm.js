@@ -39,6 +39,22 @@ export class LineWrap<T> {
     // TODO: make sure the line indices stay consistent here...
     this._rowIndices.shiftElements(start, count, offset)
   }
+  public setLineLength(lineIndex: number, length: number, width: number) {
+    let lineStats
+    let i = 0
+    while (!lineStats && i < this._rowIndices.length) {
+      if (this._rowIndices.get(i).lineIndex === lineIndex) {
+        lineStats = this._rowIndices.get(i)
+      } else {
+        i += 1
+      }
+    }
+    if (lineStats) {
+      lineStats.lineLength = lineStats.lineLength || []
+      lineStats.lineLength.push(((lineStats.endIndex - lineStats.startIndex) * width) + length)
+      console.log('set lineLength to:', lineStats.lineLength, length, width)
+    }
+  }
   public getRowIndex(index: number): any {
     const lineContainingRowIndex = this._rowIndices.filter(r => {
       return (
@@ -85,17 +101,22 @@ export class LineWrap<T> {
     // TODO: wrap according to width
     this._rowIndices.push({lineIndex, startIndex, endIndex})
   }
-  public changeLineLength (lines: any, length: number) {
+  public changeLineLength (lines: any, length: number, cursorPos: number) {
     let prevLine
+    let foundCursor = false
     for (let i = 0; i < this._rowIndices.length; i += 1) {
       let lineStats = this._rowIndices.get(i)
       const line = lines.get(lineStats.lineIndex)
       if (line) {
-        const lineWithoutTrailingSpaces = line
-        .map(c => c[1])
-        .join('')
-        .replace(/\s\s+$/, '') // TODO: fix this
-        const lineLength = lineWithoutTrailingSpaces.length
+        let lineLength
+        if (lineStats.lineLength !== undefined) {
+          lineLength = lineStats.lineLength
+        } else if (foundCursor) {
+          lineLength = 0
+        } else {
+          foundCursor = true
+          lineLength = cursorPos
+        }
         const newRowCountInLine = Math.ceil(lineLength / length) > 0
           ? Math.ceil(lineLength / length)
           : 1

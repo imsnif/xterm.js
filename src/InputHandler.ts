@@ -90,6 +90,7 @@ export class InputHandler implements IInputHandler {
       }
 
       this._terminal.lines.get(row)[relativeX] = [this._terminal.curAttr, char, ch_width];
+      lineStats.lineLength = relativeX
       this._terminal.x++;
       this._terminal.updateRange(this._terminal.y);
 
