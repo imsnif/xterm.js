@@ -71,6 +71,7 @@ var WRITE_BATCH_SIZE = 300;
  * @alias module:xterm/src/xterm
  */
 function Terminal(options) {
+  window.terminal = this // TODO: removeme
   var self = this;
 
   if (!(this instanceof Terminal)) {
@@ -241,6 +242,24 @@ function Terminal(options) {
   this.lineWrap = new LineWrap(this.scrollback);
   this.lines.on('push', ({value}) => this.lineWrap.push(value))
   this.lines.on('pop', () => this.lineWrap.pop())
+  this.lines.on('maxLength', ({newMaxLength}) => {
+    this.lineWrap.maxLength = newMaxLength
+  })
+  this.lines.on('length', ({newLength}) => {
+    this.lineWrap.length = newLength
+  })
+  this.lines.on('splice', ({start, deleteCount, items}) => {
+    console.log('splicing')
+    this.lineWrap.splice(start, deleteCount, items)
+  })
+  this.lines.on('trimStart', ({count}) => {
+    console.log('trimStarting')
+    this.lineWrap.trimStart(count)
+  })
+  this.lines.on('shiftElements', ({start, count, offset}) => {
+    console.log('shiftElementsing')
+    this.lineWrap.shiftElements(start, count, offset)
+  })
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1099,7 +1118,7 @@ Terminal.prototype.showCursor = function() {
  * Scroll the terminal down 1 row, creating a blank line.
  */
 Terminal.prototype.scroll = function() {
-  var row;
+  // var row;
 
   // Make room for the new row in lines
   if (this.lines.length === this.lines.maxLength) {
@@ -1117,19 +1136,21 @@ Terminal.prototype.scroll = function() {
     this.ydisp = this.ybase;
   }
 
-  // last line
-  row = this.ybase + this.rows - 1;
+//  // last line
+//  row = this.ybase + this.rows - 1;
+//
+//  // subtract the bottom scroll region
+//  row -= this.rows - 1 - this.scrollBottom;
 
-  // subtract the bottom scroll region
-  row -= this.rows - 1 - this.scrollBottom;
+  this.lines.push(this.blankLine());
 
-  if (row === this.lines.length) {
-    // Optimization: pushing is faster than splicing when they amount to the same behavior
-    this.lines.push(this.blankLine());
-  } else {
-    // add our new line
-    this.lines.splice(row, 0, this.blankLine());
-  }
+//  if (row === this.lines.length) {
+//    // Optimization: pushing is faster than splicing when they amount to the same behavior
+//    this.lines.push(this.blankLine());
+//  } else {
+//    // add our new line
+//    this.lines.splice(row, 0, this.blankLine());
+//  }
 
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
@@ -1805,7 +1826,7 @@ Terminal.prototype.resize = function(x, y) {
   j = this.cols;
   if (j < x) {
     const prevStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
-    const prevLineCountAtCursor = prevStatsAtCursor.endIndex - prevStatsAtCursor.startIndex
+    const prevLineCountAtCursor = prevStatsAtCursor ? prevStatsAtCursor.endIndex - prevStatsAtCursor.startIndex : 0
     let rowCount = this.lineWrap.rowCount
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
@@ -1820,7 +1841,7 @@ Terminal.prototype.resize = function(x, y) {
       }
     }
     const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
-    const lineCountAtCursor = lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex
+    const lineCountAtCursor = lineStatsAtCursor ? lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex : 0
     this.x = ((prevLineCountAtCursor - lineCountAtCursor) * this.cols) + this.x
   } else { // (j > x)
     let rowCount = this.lineWrap.rowCount
@@ -1828,21 +1849,21 @@ Terminal.prototype.resize = function(x, y) {
     this.lineWrap.changeLineLength(this.lines, x)
     let newRows = this.lineWrap.rowCount - rowCount
     while (newRows > 0 && newRows--) {
-      this.y++
-      if (this.y > this.scrollBottom) {
-        this.y--
-        this.ybase++
-        if (this.ydisp + 1 <= this.ybase) this.ydisp++
-      }
-    } else {
-      // in this case, counting lines might be erroneous.
-      // we'd just like the cursor on the last non-blank line
-      this.ybase = 0
-      this.ydisp = 0
-      this.y = lastNonBlankLine(this.lines)
+      this.scroll()
+//      this.y++
+//      if (this.y > this.scrollBottom) {
+//        this.y--
+//        this.ybase++
+//        if (this.ydisp + 1 <= this.ybase) this.ydisp++
+//      }
     }
     const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
-    this.x = this.x - ((lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex) * x)
+    if (lineStatsAtCursor) {
+      // TODO: CONTINUE HERE, this.x gets messed up (is negative) when wrapping
+      console.log('end - start:', lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex)
+    }
+    this.x = lineStatsAtCursor ? this.x - ((lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex) * x) : x
+    console.log('set this.x to:', this.x)
   }
 
   this.cols = x;

@@ -17,6 +17,28 @@ export class LineWrap<T> {
   constructor(maxLength: number) {
     this._rowIndices = new CircularList(maxLength)
   }
+  public set maxLength(newMaxLength: number) {
+    this._rowIndices.maxLength = newMaxLength
+  }
+  public set length(newLength: number) {
+    this._rowIndices.length = newLength
+  }
+  public splice(start: number, deleteCount: number, ...items: T[]): void {
+    // TODO: make sure the line indices stay consistent here...
+    this._rowIndices.splice(start, deleteCount, items)
+  }
+  public trimStart(count: number): void {
+    this._rowIndices.trimStart(count)
+    for (let i = 0; i < this._rowIndices.maxLength; i++) {
+      this._rowIndices.get(i).lineIndex -= count
+      this._rowIndices.get(i).startIndex -= count
+      this._rowIndices.get(i).endIndex -= count
+    }
+  }
+  public shiftElements(start: number, count: number, offset: number): void {
+    // TODO: make sure the line indices stay consistent here...
+    this._rowIndices.shiftElements(start, count, offset)
+  }
   public getRowIndex(index: number): any {
     const lineContainingRowIndex = this._rowIndices.filter(r => {
       return (
@@ -42,7 +64,7 @@ export class LineWrap<T> {
     }
   }
   public getRow(index: number): any {
-    return this._rowIndices[index]
+    return this._rowIndices.get(index)
   }
   public relativeCharPosition(charIndex: number, lineIndex: number, width: number): any {
     const lineStats = this.getRowIndex(lineIndex)

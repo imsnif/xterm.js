@@ -151,15 +151,6 @@ export class Renderer {
       }
       out = '';
 
-      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
-          && this._terminal.cursorState
-          && !this._terminal.cursorHidden) {
-        x = this._terminal.x;
-      } else {
-        x = -1;
-      }
-
-      attr = this._terminal.defAttr;
 
       // start: row index in line times this.cols
       // end: start + this.cols
@@ -167,16 +158,30 @@ export class Renderer {
       const endPosInLine = startPosInLine + this._terminal.cols
       i = startPosInLine
 
+      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
+          && this._terminal.cursorState
+          && !this._terminal.cursorHidden) {
+        x = this._terminal.x + startPosInLine
+        console.log('is cursor y, x:', this._terminal.y, x)
+      } else {
+        x = -1;
+      }
 
-      // for (; i < width; i++) {
+      attr = this._terminal.defAttr;
+
       for (; i < endPosInLine; i++) {
-        if (!line[i]) {
+        if (!line[i] && !(i === x)) {
           // Continue if the character is not available, this means a resize is currently in progress
           continue;
+        } else if (i === x) { // TODO: fix this with the end-of-line trailing whitespace issue
+          data = -1
+          ch = ' '
+          ch_width = 1
+        } else {
+          data = line[i][0];
+          ch = line[i][1];
+          ch_width = line[i][2];
         }
-        data = line[i][0];
-        ch = line[i][1];
-        ch_width = line[i][2];
         if (!ch_width)
           continue;
 
