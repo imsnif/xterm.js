@@ -1766,8 +1766,8 @@ Terminal.prototype.resize = function(x, y) {
     let rowCount = this.lineWrap.rowCount
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
-    this.lineWrap.changeLineLength(this.lines, x)
-    let newRows = this.lineWrap.rowCount - rowCount
+    this.lineWrap.changeLineLength(this.lines, x, this.x)
+    let newRows = this.lineWrap.rowCount - rowCount + 1
     while (newRows < 0 && newRows++) {
       this.y--
       if (this.y < 0) {
@@ -1782,8 +1782,9 @@ Terminal.prototype.resize = function(x, y) {
   } else { // (j > x)
     let rowCount = this.lineWrap.rowCount
     i = this.lines.length;
-    this.lineWrap.changeLineLength(this.lines, x)
-    let newRows = this.lineWrap.rowCount - rowCount
+    this.lineWrap.changeLineLength(this.lines, x, this.x)
+    // TODO: CONTINUE HERE - rowcount is off by one when wrapping but not when unwrapping
+    let newRows = this.lineWrap.rowCount - rowCount - 1
     while (newRows > 0 && newRows--) {
       this.scroll()
 //      this.y++
@@ -1794,12 +1795,7 @@ Terminal.prototype.resize = function(x, y) {
 //      }
     }
     const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
-    if (lineStatsAtCursor) {
-      // TODO: CONTINUE HERE, this.x gets messed up (is negative) when wrapping
-      console.log('end - start:', lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex)
-    }
     this.x = lineStatsAtCursor ? this.x - ((lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex) * x) : x
-    console.log('set this.x to:', this.x)
   }
 
   this.cols = x;
