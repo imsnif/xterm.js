@@ -27,9 +27,10 @@ export class InputHandler implements IInputHandler {
         char = this._terminal.charset[char];
       }
 
-      let lineStats = this._terminal.lineWrap.getRowIndex(this._terminal.y + this._terminal.ybase)
-      lineStats = this._terminal.lineWrap.getRowIndex(this._terminal.y + this._terminal.ybase)
-      let row = lineStats.lineIndex
+      let lineStats = this._terminal.lineWrap.getRowIndex(this._terminal.y + this._terminal.ybase);
+      console.log(this._terminal);
+      lineStats = this._terminal.lineWrap.getRowIndex(this._terminal.y + this._terminal.ybase);
+      let row = lineStats.lineIndex;
 
       // insert combining char in last cell
       // FIXME: needs handling after cursor jumps
@@ -55,7 +56,7 @@ export class InputHandler implements IInputHandler {
       if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
-          this._terminal.lineWrap.addRowToLine(this._terminal.y + this._terminal.ybase)
+          this._terminal.lineWrap.addRowToLine(this._terminal.y + this._terminal.ybase);
           this._terminal.x = 0;
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {
@@ -67,9 +68,9 @@ export class InputHandler implements IInputHandler {
             return;
         }
       }
-      lineStats = this._terminal.lineWrap.getRowIndex(this._terminal.y + this._terminal.ybase)
-      row = lineStats.lineIndex
-      const relativeX = this._terminal.x + ((lineStats.endIndex - lineStats.startIndex) * this._terminal.cols)
+      lineStats = this._terminal.lineWrap.getRowIndex(this._terminal.y + this._terminal.ybase);
+      row = lineStats.lineIndex;
+      const relativeX = this._terminal.x + ((lineStats.endIndex - lineStats.startIndex) * this._terminal.cols);
 
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
@@ -90,7 +91,7 @@ export class InputHandler implements IInputHandler {
       }
 
       this._terminal.lines.get(row)[relativeX] = [this._terminal.curAttr, char, ch_width];
-      lineStats.lineLength = relativeX
+      lineStats.lineLength = relativeX;
       this._terminal.x++;
       this._terminal.updateRange(this._terminal.y);
 
