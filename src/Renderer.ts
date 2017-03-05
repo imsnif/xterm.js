@@ -24,15 +24,27 @@ enum FLAGS {
 
 let brokenBold: boolean = null;
 
-const trimBlank = (line) => {
+const trimBlank = (line, max) => {
   let i = line.length - 1;
   for (i; i >= 0; i--) {
-    if (line[i][1] !== ' ') {
-      break;
+    if (i >= max) {
+      if (line[i][1] !== ' ') {
+        break;
+      }
+    } else {
+      if (line[i][1] !== ' ' || line[i][0] !== 131840) {
+        break;
+      }
     }
   }
 
-  return line.slice(0, i + 2);
+  if (i < max) {
+    i = max;
+  } else {
+    i += 3;
+  }
+
+  return line.slice(0, i);
 };
 
 const chunkArray = (array, chunkSize) => {
@@ -180,8 +192,10 @@ export class Renderer {
         continue;
       }
 
+      console.log(line);
+
       if (line.length > width) {
-        overflowBuffer = chunkArray(trimBlank(line), width);
+        overflowBuffer = chunkArray(trimBlank(line, width), width);
         if (!overflowBuffer.length) {
           return;
         }
@@ -208,11 +222,15 @@ export class Renderer {
       for (; i < width; i++) {
         if (!line[i]) {
           // Continue if the character is not available, this means a resize is currently in progress
-          continue;
+          data = this._terminal.defAttr;
+          ch = ' ';
+          ch_width = 1;
+
+        } else {
+          data = line[i][0];
+          ch = line[i][1];
+          ch_width = line[i][2];
         }
-        data = line[i][0];
-        ch = line[i][1];
-        ch_width = line[i][2];
         if (!ch_width)
           continue;
 
