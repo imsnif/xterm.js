@@ -52,7 +52,6 @@ export class LineWrap<T> {
     if (lineStats) {
       lineStats.lineLength = lineStats.lineLength || []
       lineStats.lineLength.push(((lineStats.endIndex - lineStats.startIndex) * width) + length)
-      console.log('set lineLength to:', lineStats.lineLength, length, width)
     }
   }
   public getRowIndex(index: number): any {

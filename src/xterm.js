@@ -246,15 +246,12 @@ function Terminal(options) {
     this.lineWrap.length = newLength
   })
   this.lines.on('splice', ({start, deleteCount, items}) => {
-    console.log('splicing')
     this.lineWrap.splice(start, deleteCount, items)
   })
   this.lines.on('trimStart', ({count}) => {
-    console.log('trimStarting')
     this.lineWrap.trimStart(count)
   })
   this.lines.on('shiftElements', ({start, count, offset}) => {
-    console.log('shiftElementsing')
     this.lineWrap.shiftElements(start, count, offset)
   })
   var i = this.rows;
@@ -1767,13 +1764,13 @@ Terminal.prototype.resize = function(x, y) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
     this.lineWrap.changeLineLength(this.lines, x, this.x)
-    let newRows = this.lineWrap.rowCount - rowCount + 1
+    let newRows = this.lineWrap.rowCount - rowCount
     while (newRows < 0 && newRows++) {
-      this.y--
-      if (this.y < 0) {
-        this.y++
+      if (this.ybase > 0) {
         this.ybase--
         if (this.ydisp - 1 >= 0) this.ydisp--
+      } else {
+        this.y--
       }
     }
     const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
@@ -1783,19 +1780,25 @@ Terminal.prototype.resize = function(x, y) {
     let rowCount = this.lineWrap.rowCount
     i = this.lines.length;
     this.lineWrap.changeLineLength(this.lines, x, this.x)
-    // TODO: CONTINUE HERE - rowcount is off by one when wrapping but not when unwrapping
-    let newRows = this.lineWrap.rowCount - rowCount - 1
+    // let newRows = this.lineWrap.rowCount - rowCount - 1
+    let newRows = this.lineWrap.rowCount - rowCount
     while (newRows > 0 && newRows--) {
-      this.scroll()
-//      this.y++
-//      if (this.y > this.scrollBottom) {
-//        this.y--
-//        this.ybase++
-//        if (this.ydisp + 1 <= this.ybase) this.ydisp++
-//      }
+      if (this.y >= this.scrollBottom) {
+        this.scroll()
+      } else {
+        this.y++
+      }
     }
     const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
     this.x = lineStatsAtCursor ? this.x - ((lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex) * x) : x
+  }
+
+  if (this.y + this.ybase > this.scrollBottom) {
+    const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
+    while (this.lines.length > lineStatsAtCursor.lineIndex + 1) {
+      // line below cursor
+      this.lines.pop()
+    }
   }
 
   this.cols = x;

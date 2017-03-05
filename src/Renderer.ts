@@ -117,7 +117,7 @@ export class Renderer {
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
   private _refresh(start: number, end: number): void {
-    let x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+    let x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, startPosInLine, endPosInLine, focused = document.activeElement;
 
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
     if (end - start >= this._terminal.rows / 2) {
@@ -139,30 +139,34 @@ export class Renderer {
       // row = y + this._terminal.ydisp;
       const lineStats = this._terminal.lineWrap.getRowIndex(y + this._terminal.ydisp)
       if (!lineStats) {
-        // TODO: find out if this is the same condition as below
-        continue;
+        line = this._terminal.blankLine()
+        startPosInLine = 0
+        i = startPosInLine
+        endPosInLine = line.length - 1
+        out = ''
+      } else {
+        row = lineStats.lineIndex
+
+        line = this._terminal.lines.get(row);
+        if (!line || !this._terminal.children[y]) {
+          // Continue if the line is not available, this means a resize is currently in progress
+          continue;
+        }
+        out = '';
+
+
+        // start: row index in line times this.cols
+        // end: start + this.cols
+        startPosInLine = (y + this._terminal.ydisp - lineStats.startIndex) * this._terminal.cols
+        endPosInLine = startPosInLine + this._terminal.cols
+        i = startPosInLine
+
       }
-      row = lineStats.lineIndex
-
-      line = this._terminal.lines.get(row);
-      if (!line || !this._terminal.children[y]) {
-        // Continue if the line is not available, this means a resize is currently in progress
-        continue;
-      }
-      out = '';
-
-
-      // start: row index in line times this.cols
-      // end: start + this.cols
-      const startPosInLine = (y + this._terminal.ydisp - lineStats.startIndex) * this._terminal.cols
-      const endPosInLine = startPosInLine + this._terminal.cols
-      i = startPosInLine
 
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
           && this._terminal.cursorState
           && !this._terminal.cursorHidden) {
         x = this._terminal.x + startPosInLine
-        console.log('is cursor y, x:', this._terminal.y, x)
       } else {
         x = -1;
       }
