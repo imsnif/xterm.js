@@ -24,6 +24,17 @@ enum FLAGS {
 
 let brokenBold: boolean = null;
 
+const chunkArray = (array, chunkSize) => {
+  let temparray = [];
+  let i = 0;
+  let j = array.length;
+  for (i; i < j; i += chunkSize) {
+    temparray.push(array.slice(i, i + chunkSize));
+  }
+
+  return temparray;
+};
+
 export class Renderer {
   /** A queue of the rows to be refreshed */
   private _refreshRowsQueue: {start: number, end: number}[] = [];
@@ -128,14 +139,18 @@ export class Renderer {
     }
 
     width = this._terminal.cols;
-    y = start;
+    y = end + 1;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
       end = this._terminal.rows - 1;
     }
 
-    for (; y <= end; y++) {
+    let renderCount = 0;
+    let rowsToRender = end - start;
+    while (renderCount <= rowsToRender) {
+      y--;
+      renderCount++;
       row = y + this._terminal.ydisp;
 
       line = this._terminal.lines.get(row);
