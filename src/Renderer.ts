@@ -147,6 +147,7 @@ export class Renderer {
     }
 
     let overflowBuffer = [];
+    let inOverflow = false;
 
     let renderCount = 0;
     let rowsToRender = end - start;
@@ -154,7 +155,9 @@ export class Renderer {
 
       if (overflowBuffer.length) {
         line = overflowBuffer.pop();
+        inOverflow = true;
       } else {
+        inOverflow = false;
         y--;
         row = y + this._terminal.ydisp;
 
@@ -169,9 +172,10 @@ export class Renderer {
       if (line.length > width) {
         overflowBuffer = chunkArray(line, width);
         line = overflowBuffer.pop();
+        inOverflow = true;
       }
 
-      if (line.map(l => l[1]).join('').trim() === '') {
+      if (inOverflow && line.map(l => l[1]).join('').trim() === '') {
         continue;
       }
 

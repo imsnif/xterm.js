@@ -1974,7 +1974,7 @@ Terminal.prototype.eraseRight = function(x, y) {
     return;
   }
   var ch = [this.eraseAttr(), ' ', 1]; // xterm
-  for (; x < this.cols; x++) {
+  for (; x < line.length; x++) {
     line[x] = ch;
   }
   this.updateRange(y);
