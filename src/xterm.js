@@ -1797,19 +1797,15 @@ Terminal.prototype.resize = function(x, y) {
 
   // resize cols
   j = this.cols;
+
+  // We can increase the number of characters that can be stored in lines, but never reduce them.
+  // Reducing line length would discard character info, which we don't want!
   if (j < x) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
     while (i--) {
       while (this.lines.get(i).length < x) {
         this.lines.get(i).push(ch);
-      }
-    }
-  } else { // (j > x)
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
       }
     }
   }
@@ -1971,7 +1967,7 @@ Terminal.prototype.eraseRight = function(x, y) {
     return;
   }
   var ch = [this.eraseAttr(), ' ', 1]; // xterm
-  for (; x < this.cols; x++) {
+  for (; x < line.length; x++) {
     line[x] = ch;
   }
   this.updateRange(y);
