@@ -170,7 +170,6 @@ export class Renderer {
         overflowBuffer = chunkArray(line, width);
         line = overflowBuffer.pop();
       }
-      console.log(line.length, line);
 
       if (line.map(l => l[1]).join('').trim() === '') {
         continue;
