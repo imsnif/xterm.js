@@ -58,7 +58,19 @@ const trimBlank = (line, min, blank) => {
   return line.slice(0, i);
 };
 
-const chunkArray = (array, chunkSize) => {
+/**
+ * Splits an array into N sized chunks.
+ *
+ * @param {number} chunkSize - the size of each chunk
+ * @param {array} array - the array to chunk
+ *
+ * @return {array} - An array of chunks
+ *
+ * @example
+ * let array = [1, 2, 3, 4, 5, 6, 7];
+ * chunkArray(3, array); //--> [[1, 2, 3], [4, 5, 6], [7]]
+ */
+const chunkArray = (chunkSize, array) => {
   let temparray = [];
   let i = 0;
   let j = array.length;
@@ -206,7 +218,7 @@ export class Renderer {
       console.log(line);
 
       if (line.length > width) {
-        overflowBuffer = chunkArray(trimBlank(line, width, this._terminal.defAttr), width);
+        overflowBuffer = chunkArray(width, trimBlank(line, width, this._terminal.defAttr));
         if (!overflowBuffer.length) {
           return;
         }
