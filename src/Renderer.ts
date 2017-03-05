@@ -185,49 +185,45 @@ export class Renderer {
     }
 
     width = this._terminal.cols;
-    y = end + 1;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
       end = this._terminal.rows - 1;
     }
 
+    y = end + 1;
+
+    // stores overflow from lines that are longer then the current width
     let overflowBuffer = [];
-    let inOverflow = false;
 
     let renderCount = 0;
     let rowsToRender = end - start;
+
+    // Lines are rendered in reverse, from bottom to top, to help line wrapping logic
     while (renderCount <= rowsToRender) {
 
+      // If there are overflow lines use the last one
       if (overflowBuffer.length) {
         line = overflowBuffer.pop();
-        inOverflow = true;
       } else {
-        inOverflow = false;
         y--;
         row = y + this._terminal.ydisp;
 
         line = this._terminal.lines.get(row);
       }
+
       if (!line || !this._terminal.children[y]) {
         // Continue if the line is not available, this means a resize is currently in progress
         renderCount++;
         continue;
       }
 
-      console.log(line);
-
+      // If the line is longer than the current width, trim then chunk the line and store it in the
+      // overflowBuffer and continue the render with the last line in the buffer
       if (line.length > width) {
         overflowBuffer = chunkArray(width, trimBlank(line, width, this._terminal.defAttr));
-        if (!overflowBuffer.length) {
-          return;
-        }
         line = overflowBuffer.pop();
       }
-
-//      if (inOverflow && line.map(l => l[1]).join('').trim() === '') {
-//        continue;
-//      }
 
       out = '';
 
