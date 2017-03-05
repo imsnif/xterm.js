@@ -24,25 +24,37 @@ enum FLAGS {
 
 let brokenBold: boolean = null;
 
-const trimBlank = (line, max) => {
+/**
+ * Strips trailing whitespace from line, down to a minimum length
+ * Under the minimum length it will only strip default blank characters, in case they are part of
+ * a coloured bg (ie vim)
+ *
+ * @param {array} line - A terminal line
+ * @param {number} min - The minimum length to trim the line to
+ * @param {number} blank - The code for a default blank character
+ *
+ * @return {array} - The trimmed terminal line
+ */
+const trimBlank = (line, min, blank) => {
   let i = line.length - 1;
   for (i; i >= 0; i--) {
-    if (i >= max) {
+    if (i >= min) {
       if (line[i][1] !== ' ') {
         break;
       }
     } else {
-      if (line[i][1] !== ' ' || line[i][0] !== 131840) {
+      if (line[i][1] !== ' ' || line[i][0] !== blank) {
         break;
       }
     }
   }
 
-  if (i < max) {
-    i = max;
+  if (i < min) {
+    i = min;
   } else {
-    // 3 extra allows for cursor
-    i += 3;
+    // 2 extra blank chars allows for cursor and ensures at least one element is in array (in case
+    // of intentional blank rows)
+    i += 2;
   }
 
   return line.slice(0, i);
@@ -196,7 +208,7 @@ export class Renderer {
       console.log(line);
 
       if (line.length > width) {
-        overflowBuffer = chunkArray(trimBlank(line, width), width);
+        overflowBuffer = chunkArray(trimBlank(line, width, this._terminal.defAttr), width);
         if (!overflowBuffer.length) {
           return;
         }
