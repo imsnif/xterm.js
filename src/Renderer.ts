@@ -24,6 +24,17 @@ enum FLAGS {
 
 let brokenBold: boolean = null;
 
+const trimBlank = (line) => {
+  let i = line.length - 1;
+  for (i; i >= 0; i--) {
+    if (line[i][1] !== ' ') {
+      break;
+    }
+  }
+
+  return line.slice(0, i + 2);
+};
+
 const chunkArray = (array, chunkSize) => {
   let temparray = [];
   let i = 0;
@@ -170,14 +181,16 @@ export class Renderer {
       }
 
       if (line.length > width) {
-        overflowBuffer = chunkArray(line, width);
+        overflowBuffer = chunkArray(trimBlank(line), width);
+        if (!overflowBuffer.length) {
+          return;
+        }
         line = overflowBuffer.pop();
-        inOverflow = true;
       }
 
-      if (inOverflow && line.map(l => l[1]).join('').trim() === '') {
-        continue;
-      }
+//      if (inOverflow && line.map(l => l[1]).join('').trim() === '') {
+//        continue;
+//      }
 
       out = '';
 
