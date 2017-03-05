@@ -146,18 +146,36 @@ export class Renderer {
       end = this._terminal.rows - 1;
     }
 
+    let overflowBuffer = [];
+
     let renderCount = 0;
     let rowsToRender = end - start;
     while (renderCount <= rowsToRender) {
-      y--;
-      renderCount++;
-      row = y + this._terminal.ydisp;
 
-      line = this._terminal.lines.get(row);
+      if (overflowBuffer.length) {
+        line = overflowBuffer.pop();
+      } else {
+        y--;
+        row = y + this._terminal.ydisp;
+
+        line = this._terminal.lines.get(row);
+      }
       if (!line || !this._terminal.children[y]) {
         // Continue if the line is not available, this means a resize is currently in progress
+        renderCount++;
         continue;
       }
+
+      if (line.length > width) {
+        overflowBuffer = chunkArray(line, width);
+        line = overflowBuffer.pop();
+      }
+      console.log(line.length, line);
+
+      if (line.map(l => l[1]).join('').trim() === '') {
+        continue;
+      }
+
       out = '';
 
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
@@ -292,7 +310,8 @@ export class Renderer {
         out += '</span>';
       }
 
-      this._terminal.children[y].innerHTML = out;
+      renderCount++;
+      this._terminal.children[end + 1 - renderCount].innerHTML = out;
     }
 
     if (parent) {

@@ -1809,9 +1809,11 @@ Terminal.prototype.resize = function(x, y) {
   } else { // (j > x)
     i = this.lines.length;
     while (i--) {
+      /*
       while (this.lines.get(i).length > x) {
         this.lines.get(i).pop();
       }
+      */
     }
   }
   this.cols = x;
