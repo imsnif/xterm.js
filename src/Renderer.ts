@@ -38,7 +38,7 @@ const trimBlank = (line, max) => {
     }
   }
 
-  if (i <= max) {
+  if (i < max) {
     i = max;
   } else {
     // 3 extra allows for cursor
