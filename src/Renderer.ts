@@ -27,7 +27,8 @@ let brokenBold: boolean = null;
 /**
  * Strips trailing whitespace from line, down to a minimum length
  * Under the minimum length it will only strip default blank characters, in case they are part of
- * a coloured bg (ie vim)
+ * a coloured bg (ie vim).
+ * Returns a shallow copy of the original array.
  *
  * @param {array} line - A terminal line
  * @param {number} min - The minimum length to trim the line to
@@ -38,14 +39,11 @@ let brokenBold: boolean = null;
 const trimBlank = (line, min, blank) => {
   let i = line.length - 1;
   for (i; i >= 0; i--) {
-    if (i >= min) {
-      if (line[i][1] !== ' ') {
-        break;
-      }
-    } else {
-      if (line[i][1] !== ' ' || line[i][0] !== blank) {
-        break;
-      }
+    if (
+      (i >= min && line[i][1] !== ' ') ||
+      i < min && (line[i][1] !== ' ' || line[i][0] !== blank)
+    ) {
+      break;
     }
   }
 
