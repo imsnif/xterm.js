@@ -66,9 +66,9 @@ export class Viewport {
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
   public syncScrollArea(): void {
-    if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
+    if (this.lastRecordedBufferLength !== this.terminal.lineWrap.rowCount) {
       // If buffer height changed
-      this.lastRecordedBufferLength = this.terminal.lines.length;
+      this.lastRecordedBufferLength = this.terminal.lineWrap.rowCount;
       this.refresh();
     } else if (this.lastRecordedViewportHeight !== this.terminal.rows) {
       // If viewport height changed
