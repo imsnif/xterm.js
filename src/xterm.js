@@ -1839,7 +1839,7 @@ Terminal.prototype.resize = function(x, y) {
     }
     const lineStatsAtCursor = this.lineWrap.getRowIndex(this.y + this.ybase)
     const lineCountAtCursor = lineStatsAtCursor ? lineStatsAtCursor.endIndex - lineStatsAtCursor.startIndex : 0
-    this.x = ((prevLineCountAtCursor - lineCountAtCursor) * this.cols) + this.x
+    this.x = ((prevLineCountAtCursor - lineCountAtCursor) * this.cols) + this.x + 1;
   } else { // (j > x)
     let rowCount = this.lineWrap.rowCount
     i = this.lines.length;
