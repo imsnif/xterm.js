@@ -1,8 +1,11 @@
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
+const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
 const gulp = require('gulp');
+const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
+const mocha = require('gulp-mocha');
 const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
@@ -68,6 +71,19 @@ gulp.task('browserify', ['tsc'], function() {
   return merge(bundleStream, copyAddons, copyStylesheets);
 });
 
+gulp.task('instrument-test', function () {
+  return gulp.src(['lib/**/*.js'])
+    // Covering files
+    .pipe(istanbul())
+    // Force `require` to return covered files
+    .pipe(istanbul.hookRequire());
+});
+
+gulp.task('mocha', ['instrument-test'], function () {
+  return gulp.src(['lib/*test.js', 'lib/**/*test.js'], {read: false})
+      .pipe(mocha())
+      .pipe(istanbul.writeReports());
+});
 
 /**
  * Use `sorcery` to resolve the source map chain and point back to the TypeScript files.
@@ -80,6 +96,14 @@ gulp.task('sorcery', ['browserify'], function () {
   chain.writeSync();
 });
 
-gulp.task('build', ['sorcery']);
+/**
+ * Submit coverage results to coveralls.io
+ */
+gulp.task('coveralls', function () {
+  gulp.src('coverage/**/lcov.info')
+    .pipe(coveralls());
+});
 
+gulp.task('build', ['sorcery']);
+gulp.task('test', ['mocha']);
 gulp.task('default', ['build']);

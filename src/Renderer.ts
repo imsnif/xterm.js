@@ -139,6 +139,7 @@ export class Renderer {
       // row = y + this._terminal.ydisp;
       const lineStats = this._terminal.lineWrap.getRowIndex(y + this._terminal.ydisp)
       if (!lineStats) {
+
         line = this._terminal.blankLine()
         startPosInLine = 0
         i = startPosInLine
@@ -160,8 +161,14 @@ export class Renderer {
         startPosInLine = (y + this._terminal.ydisp - lineStats.startIndex) * this._terminal.cols
         endPosInLine = startPosInLine + this._terminal.cols
         i = startPosInLine
-
       }
+
+
+      // start: row index in line times this.cols
+      // end: start + this.cols
+      const startPosInLine = (y + this._terminal.ydisp - lineStats.startIndex) * this._terminal.cols
+      const endPosInLine = startPosInLine + this._terminal.cols
+      i = startPosInLine
 
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
           && this._terminal.cursorState

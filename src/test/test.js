@@ -571,6 +571,7 @@ describe('xterm.js', function() {
 
   describe('unicode - surrogates', function() {
     it('2 characters per cell', function () {
+      this.timeout(10000);  // This is needed because istanbul patches code and slows it down
       var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.write(high + String.fromCharCode(i));
@@ -873,11 +874,15 @@ describe('xterm.js', function() {
       expect(xterm.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
-  describe.only('resize', function() {
+
+
+  describe('resize', function() {
+
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
       xterm.resize(50, xterm.rows)
+
       expect(xterm.lines.length).eql(24)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       expect(
@@ -887,6 +892,7 @@ describe('xterm.js', function() {
         .every(c => c === '1')
       ).eql(true)
       expect(
+
         wrappedLines[1]
         .map(c => c[1])
         .filter(c => c !== ' ')
