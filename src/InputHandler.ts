@@ -48,22 +48,6 @@ export class InputHandler implements IInputHandler {
         return;
       }
 
-      // goto next line if ch would overflow
-      // TODO: needs a global min terminal width of 2
-      if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
-        // autowrap - DECAWM
-        if (this._terminal.wraparoundMode) {
-          this._terminal.x = 0;
-          this._terminal.y++;
-          if (this._terminal.y > this._terminal.scrollBottom) {
-            this._terminal.y--;
-            this._terminal.scroll();
-          }
-        } else {
-          if (ch_width === 2)  // FIXME: check for xterm behavior
-            return;
-        }
-      }
       row = this._terminal.y + this._terminal.ybase;
 
       // insert mode: move characters to right
