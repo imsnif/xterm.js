@@ -3,6 +3,7 @@
  */
 
 import { ITerminal } from './Interfaces';
+import { trimThenChunk } from './utils/LineWrap';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -91,7 +92,7 @@ export class Renderer {
     // Figure out whether boldness affects
     // the character width of monospace fonts.
     if (brokenBold === null) {
-      brokenBold = checkBoldBroken((<any>this._terminal).document);
+      brokenBold = checkBoldBroken((<any>this._terminal).element);
     }
 
     // TODO: Pull more DOM interactions into Renderer.constructor, element for
@@ -221,7 +222,7 @@ export class Renderer {
       // If the line is longer than the current width, trim then chunk the line and store it in the
       // overflowBuffer and continue the render with the last line in the buffer
       if (line.length > width) {
-        overflowBuffer = chunkArray(width, trimBlank(line, width, this._terminal.defAttr));
+        overflowBuffer = trimThenChunk(line, width, this._terminal.defAttr);
         line = overflowBuffer.pop();
       }
 
@@ -378,14 +379,16 @@ export class Renderer {
 
 // if bold is broken, we can't
 // use it in the terminal.
-function checkBoldBroken(document) {
-  const body = document.getElementsByTagName('body')[0];
+function checkBoldBroken(terminal) {
+  const document = terminal.ownerDocument;
   const el = document.createElement('span');
   el.innerHTML = 'hello world';
-  body.appendChild(el);
-  const w1 = el.scrollWidth;
+  terminal.appendChild(el);
+  const w1 = el.offsetWidth;
+  const h1 = el.offsetHeight;
   el.style.fontWeight = 'bold';
-  const w2 = el.scrollWidth;
-  body.removeChild(el);
-  return w1 !== w2;
+  const w2 = el.offsetWidth;
+  const h2 = el.offsetHeight;
+  terminal.removeChild(el);
+  return w1 !== w2 || h1 !== h2;
 }

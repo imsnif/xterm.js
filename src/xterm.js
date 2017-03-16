@@ -1295,7 +1295,6 @@ Terminal.prototype.attachHypertextLinkHandler = function(handler) {
   this.refresh(0, this.rows - 1);
 }
 
-
 /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
@@ -1798,6 +1797,9 @@ Terminal.prototype.resize = function(x, y) {
 
   // resize cols
   j = this.cols;
+
+  // We can increase the number of characters that can be stored in lines, but never reduce them.
+  // Reducing line length would discard character info, which we don't want!
   if (j < x) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
@@ -1805,15 +1807,6 @@ Terminal.prototype.resize = function(x, y) {
       while (this.lines.get(i).length < x) {
         this.lines.get(i).push(ch);
       }
-    }
-  } else { // (j > x)
-    i = this.lines.length;
-    while (i--) {
-      /*
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
-      }
-      */
     }
   }
   this.cols = x;

@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "ignore": [
     "demo",
     "test",
@@ -68,7 +68,7 @@
   "scripts": {
     "prestart": "npm run build",
     "start": "node demo/app",
-    "dev": "nodemon -e js,ts --watch src --watch demo --exec npm start",
+    "dev": "nodemon -e js,ts,css --watch src --watch demo --exec npm start",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
